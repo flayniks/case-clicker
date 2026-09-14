@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Case Clicker — free idle crate-opening game for Windows</title>
+<meta name="description" content="Case Clicker is a free idle clicker for Windows with 100 upgrades, 100 bots and 100 crates. Click crates, automate everything, unbox skins on a real roulette spin. No ads, no accounts, no internet needed.">
+<meta property="og:title" content="Case Clicker — free idle crate-opening game">
+<meta property="og:description" content="Click crates, unbox skins, automate everything. Free for Windows.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0e1015">
+<link rel="icon" href="favicon.ico">
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#11141b; --panel:#171b23; --panel2:#1e232e;
+  --line:#272d3a; --txt:#dfe5ee; --dim:#8492a6;
+  --gold:#f0b90b; --green:#4caf50; --red:#eb4b4b; --purple:#8847ff; --pink:#d32ce6; --blue:#4b69ff;
+  --maxw:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--txt);
+  font:16px/1.65 "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:var(--gold);text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(11,13,18,.86);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:14px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:1.5px;font-size:15px;color:var(--gold)}
+.brand span{color:var(--txt)}
+.brand img{width:28px;height:28px;border-radius:6px}
+nav .links{margin-left:auto;display:flex;gap:22px;align-items:center}
+nav .links a{color:var(--dim);font-size:14px;font-weight:600;letter-spacing:.3px}
+nav .links a:hover{color:var(--txt)}
+nav .mini{background:var(--gold);color:#141414;padding:8px 16px;border-radius:5px;
+  font-size:13px;font-weight:800;letter-spacing:.6px}
+nav .mini:hover{filter:brightness(1.12);color:#141414}
+@media(max-width:720px){nav .links a:not(.mini){display:none}}
+
+/* ---------- hero ---------- */
+header{position:relative;padding-block:74px 60px;overflow:hidden;text-align:center}
+header::before{
+  content:"";position:absolute;inset:-40% -20% auto -20%;height:600px;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%, rgba(240,185,11,.13), transparent 62%);
+}
+header::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:54px 54px;
+  mask-image:radial-gradient(ellipse at 50% 30%,#000,transparent 68%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000,transparent 68%);
+}
+header .wrap{position:relative;z-index:2}
+.hero-ico{width:96px;height:96px;margin:0 auto 22px;border-radius:20px;
+  box-shadow:0 16px 44px rgba(240,185,11,.2),0 0 0 1px var(--line)}
+h1{font-size:clamp(38px,7vw,64px);line-height:1.04;font-weight:800;letter-spacing:-1.4px;margin-bottom:16px}
+h1 .g{background:linear-gradient(135deg,#f0b90b,#ffd700 55%,#d99b00);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:clamp(16px,2.2vw,19px);color:var(--dim);max-width:620px;margin:0 auto 32px;line-height:1.6}
+.sub b{color:var(--txt);font-weight:600}
+
+.dl{display:inline-flex;align-items:center;gap:13px;background:var(--gold);color:#141414;
+  padding:17px 34px;border-radius:8px;font-weight:800;font-size:17px;letter-spacing:.3px;
+  box-shadow:0 10px 32px rgba(240,185,11,.3);transition:.16s}
+.dl:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(240,185,11,.42);color:#141414}
+.dl svg{width:21px;height:21px;flex:0 0 auto}
+.meta{margin-top:15px;font-size:13px;color:var(--dim);letter-spacing:.3px}
+.meta b{color:var(--txt);font-weight:600}
+.alt{margin-top:9px;font-size:13px}
+.alt a{color:var(--dim);border-bottom:1px dotted var(--line)}
+.alt a:hover{color:var(--gold)}
+
+/* ---------- shot viewer ---------- */
+.shots{margin-top:58px}
+.shot-tabs{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+.shot-tabs button{
+  background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  padding:8px 16px;border-radius:20px;font:inherit;font-size:12.5px;font-weight:700;
+  letter-spacing:.9px;text-transform:uppercase;cursor:pointer;transition:.14s
+}
+.shot-tabs button:hover{color:var(--txt);border-color:#3a4354}
+.shot-tabs button.on{background:var(--gold);border-color:var(--gold);color:#141414}
+.frame{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--bg2);
+  box-shadow:0 26px 70px rgba(0,0,0,.62)}
+.bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:#14171e;border-bottom:1px solid var(--line)}
+.bar i{width:11px;height:11px;border-radius:50%;background:#2f3542;display:block}
+.bar .t{margin-left:8px;font-size:11.5px;color:var(--dim);letter-spacing:1px;font-style:normal}
+.frame img{width:100%;height:auto;aspect-ratio:1280/820;display:block}
+.cap{text-align:center;color:var(--dim);font-size:13.5px;margin-top:13px;min-height:20px}
+
+/* ---------- sections ---------- */
+section{padding-block:72px;border-top:1px solid var(--line)}
+.eyebrow{font-size:11.5px;letter-spacing:2.6px;color:var(--gold);text-transform:uppercase;
+  font-weight:800;margin-bottom:11px;text-align:center}
+h2{font-size:clamp(27px,4.4vw,37px);font-weight:800;letter-spacing:-.8px;text-align:center;margin-bottom:13px}
+.lede{text-align:center;color:var(--dim);max-width:600px;margin:0 auto 46px;font-size:16px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(276px,1fr));gap:17px}
+.feat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:26px 24px;
+  transition:.16s;position:relative;overflow:hidden}
+.feat::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--gold));
+  opacity:0;transition:.16s}
+.feat:hover{transform:translateY(-3px);border-color:#333c4d}
+.feat:hover::before{opacity:1}
+.feat .i{font-size:27px;margin-bottom:13px;display:block}
+.feat h3{font-size:16.5px;font-weight:700;margin-bottom:8px}
+.feat p{color:var(--dim);font-size:14.3px;line-height:1.62}
+
+/* rarity strip */
+.rarity{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:44px}
+.rar{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-bottom:2px solid var(--c);border-radius:7px;padding:9px 15px;font-size:13px;font-weight:600}
+.rar b{color:var(--c)}
+.rar span{color:var(--dim);font-weight:400;font-size:12px}
+
+/* steps */
+.steps{counter-reset:s;display:grid;gap:15px;max-width:660px;margin:0 auto}
+.step{display:flex;gap:17px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:19px 22px}
+.step::before{counter-increment:s;content:counter(s);flex:0 0 34px;height:34px;border-radius:50%;
+  background:var(--gold);color:#141414;font-weight:800;display:grid;place-items:center;font-size:15px}
+.step h3{font-size:15.5px;margin-bottom:4px}
+.step p{color:var(--dim);font-size:14.2px;line-height:1.6}
+.step code{background:#0c0e13;border:1px solid var(--line);border-radius:4px;padding:1px 6px;
+  font-size:12.5px;color:var(--gold);font-family:Consolas,Monaco,monospace;word-break:break-all}
+
+/* faq */
+.faq{max-width:720px;margin:0 auto;display:grid;gap:10px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+details[open]{border-color:#343d4e}
+summary{padding:17px 21px;cursor:pointer;font-weight:650;font-size:15.3px;list-style:none;
+  display:flex;justify-content:space-between;gap:14px;align-items:center;transition:.13s}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:var(--panel2)}
+summary::after{content:"+";color:var(--gold);font-size:21px;font-weight:400;flex:0 0 auto;line-height:1}
+details[open] summary::after{content:"\2212"}
+details p{padding:0 21px 19px;color:var(--dim);font-size:14.4px;line-height:1.72}
+details p+p{padding-top:0}
+details code{background:#0c0e13;border:1px solid var(--line);border-radius:4px;padding:1px 6px;
+  font-size:12.5px;color:var(--gold);font-family:Consolas,Monaco,monospace;word-break:break-all}
+
+/* final cta */
+.cta{text-align:center;background:
+  radial-gradient(ellipse at 50% 0%, rgba(240,185,11,.11), transparent 66%)}
+.specs{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;margin-top:38px;
+  color:var(--dim);font-size:13.4px}
+.specs div b{color:var(--txt);display:block;font-size:14.6px;margin-bottom:2px;font-weight:650}
+
+footer{border-top:1px solid var(--line);padding-block:34px;text-align:center;color:var(--dim);font-size:13.4px}
+footer .fl{display:flex;gap:20px;justify-content:center;margin-bottom:13px;flex-wrap:wrap}
+footer a{color:var(--dim)}
+footer a:hover{color:var(--gold)}
+.tiny{font-size:12.2px;color:#5d6878;margin-top:11px;max-width:540px;margin-inline:auto;line-height:1.6}
+
+@media(max-width:560px){
+  header{padding-block:50px 44px}
+  section{padding-block:54px}
+  .dl{width:100%;justify-content:center;padding-inline:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" alt=""><span>CASE</span>CLICKER</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a class="mini" href="Case Clicker Setup.exe" download>Download</a>
+    </div>
+  </div>
+</nav>
+
+<header id="top">
+  <div class="wrap">
+    <img class="hero-ico" src="img/icon.png" alt="Case Clicker icon" width="96" height="96">
+    <h1>Open crates.<br>Automate <span class="g">everything.</span></h1>
+    <p class="sub">A free idle clicker for Windows. Click for credits, buy bots that click for you,
+      unbox skins on a <b>real roulette spin</b>, then trade the whole account in for permanent bonuses.
+      <b>No ads, no accounts, no internet required.</b></p>
+
+    <a class="dl" href="Case Clicker Setup.exe" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download for Windows
+    </a>
+    <div class="meta">Version <b>1.3.0</b> &nbsp;·&nbsp; <b>2.3 MB</b> installer &nbsp;·&nbsp; Windows 10 &amp; 11 (64-bit)</div>
+    <div class="alt">or grab the <a href="Case Clicker.exe" download>portable .exe</a> — no install, runs from anywhere</div>
+
+    <div class="shots">
+      <div class="shot-tabs" id="shotTabs"></div>
+      <div class="frame">
+        <div class="bar"><i></i><i></i><i></i><em class="t">Case Clicker</em></div>
+        <img id="shotImg" src="img/shot-click.jpg" alt="Case Clicker gameplay" width="1280" height="820">
+      </div>
+      <p class="cap" id="shotCap">The main screen — click the crate, or let the bots handle it</p>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow">What's in it</p>
+    <h2>A full idle game, not a demo</h2>
+    <p class="lede">100 click upgrades, 100 autoclicker bots, 100 crates and a compounding prestige layer, spread across ten eras.</p>
+    <div class="grid">
+      <div class="feat" style="--ac:var(--gold)"><span class="i">🖱️</span>
+        <h3>100 click upgrades</h3>
+        <p>Mouse Grease, Hall Effect Sensors, a Cortex Implant, Bullet Time, The Final Click. Plus crit chance and crit payout tracks stacked on top.</p></div>
+      <div class="feat" style="--ac:var(--green)"><span class="i">🤖</span>
+        <h3>100 autoclicker bots</h3>
+        <p>From a Macro Script and a Mouse Jiggler all the way to a Dyson Swarm, a Black Hole Tap and The Architect. Three global multipliers stack on every one.</p></div>
+      <div class="feat" style="--ac:var(--pink)"><span class="i">🎰</span>
+        <h3>100 crates to open</h3>
+        <p>Chroma through to Black Market, with a real five-second roulette spin. Rare-special odds climb from 0.12% in the first crate to 7.5% in the last.</p></div>
+      <div class="feat" style="--ac:var(--purple)"><span class="i">🎒</span>
+        <h3>Skins that do something</h3>
+        <p>Every skin you keep is a permanent passive boost to both clicking and idle income — so hoarding is a real strategy against selling.</p></div>
+      <div class="feat" style="--ac:var(--blue)"><span class="i">◈</span>
+        <h3>Compounding prestige</h3>
+        <p>Cash the account in for Gems. They compound, so every run reaches deeper than the last — all 100 tiers are reachable.</p></div>
+      <div class="feat" style="--ac:var(--red)"><span class="i">🏆</span>
+        <h3>30 achievements</h3>
+        <p>Each is a permanent income bonus, not just a badge — including one for owning all 100 bots and one for opening all 100 crates.</p></div>
+      <div class="feat" style="--ac:var(--gold)"><span class="i">💤</span>
+        <h3>Earns while it's closed</h3>
+        <p>Your bots keep working for up to 8 hours offline. Come back to a pile of credits and a welcome-back summary.</p></div>
+      <div class="feat" style="--ac:var(--green)"><span class="i">💾</span>
+        <h3>Saves locally, always</h3>
+        <p>Progress is written to your own PC every 15 seconds and on close. Export it to a file any time, import it on another machine.</p></div>
+      <div class="feat" style="--ac:var(--pink)"><span class="i">⚡</span>
+        <h3>Autoclicker-proof</h3>
+        <p>Tested at a sustained 500 clicks per second with a full inventory and it still holds a locked 60 FPS. Point your macro at it.</p></div>
+    </div>
+
+    <div class="rarity">
+      <div class="rar" style="--c:#b0c3d9"><b>Consumer</b><span>most drops</span></div>
+      <div class="rar" style="--c:#5e98d9"><b>Industrial</b></div>
+      <div class="rar" style="--c:#4b69ff"><b>Mil-Spec</b></div>
+      <div class="rar" style="--c:#8847ff"><b>Restricted</b></div>
+      <div class="rar" style="--c:#d32ce6"><b>Classified</b></div>
+      <div class="rar" style="--c:#eb4b4b"><b>Covert</b></div>
+      <div class="rar" style="--c:#ffd700"><b>★ Exceedingly Rare</b><span>0.1% – 3.5%</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">Getting started</p>
+    <h2>Installed in about ten seconds</h2>
+    <p class="lede">No admin rights, no dependencies, no runtime to install first.</p>
+    <div class="steps">
+      <div class="step"><div>
+        <h3>Download and run the installer</h3>
+        <p>Windows may show a blue <b>"Windows protected your PC"</b> box — that appears for any app without a paid code-signing certificate. Click <b>More info</b>, then <b>Run anyway</b>.</p>
+      </div></div>
+      <div class="step"><div>
+        <h3>Pick your shortcuts</h3>
+        <p>Start Menu and Desktop shortcuts are both optional. It installs to your user folder, so Windows never asks for admin permission.</p>
+      </div></div>
+      <div class="step"><div>
+        <h3>Play</h3>
+        <p>It opens in its own clean window. Your save lives at <code>%APPDATA%\CaseClicker\save.json</code> and survives reinstalls.</p>
+      </div></div>
+      <div class="step"><div>
+        <h3>Uninstall whenever</h3>
+        <p>It's listed in <b>Settings → Apps → Installed apps</b> like any normal program. The uninstaller asks before it touches your save.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <p class="eyebrow">Questions</p>
+    <h2>Good to know</h2>
+    <div class="lede"></div>
+    <div class="faq">
+      <details open><summary>Why does Windows warn me about it?</summary>
+        <p>Because the app isn't signed with a code-signing certificate, which costs a few hundred euro a year from a certificate authority. SmartScreen shows that warning for every unsigned app, regardless of what's in it. Click <b>More info → Run anyway</b>.</p></details>
+      <details><summary>Is it actually free? What's the catch?</summary>
+        <p>Free, no catch. No ads, no in-app purchases, no analytics, no account, no telemetry. It never sends anything anywhere — the game runs entirely on your machine.</p></details>
+      <details><summary>Does it need an internet connection?</summary>
+        <p>No. It runs a tiny server on <code>127.0.0.1</code> — your own machine, not the internet — purely so the game window can read and write your save file. Nothing leaves your PC. It works fully offline.</p></details>
+      <details><summary>Where is my progress saved?</summary>
+        <p>At <code>%APPDATA%\CaseClicker\save.json</code>. It's written every 15 seconds and again whenever you close or minimise the window. Uninstalling asks before deleting it, so reinstalling keeps your progress.</p>
+        <p>You can also back it up yourself: <b>Stats → Export to file</b> writes a <code>.json</code> you can import on any other PC.</p></details>
+      <details><summary>How long does it take to finish?</summary>
+        <p>Around 8 hours of engaged play to own all 100 bot tiers, if you use prestige well. There are ten eras of content, and each prestige run gets you meaningfully deeper than the last.</p></details>
+      <details><summary>Can I use an autoclicker?</summary>
+        <p>Go for it — that's what the bots are anyway. It's been stress-tested at a sustained 500 clicks per second with a 600-skin inventory and holds a steady 60 FPS.</p></details>
+      <details><summary>Why is the download only 2 MB?</summary>
+        <p>The whole game is one compiled Go executable with the interface embedded inside it. No Electron, no bundled browser, no .NET runtime — it uses the browser engine already on your PC to draw its window.</p></details>
+      <details><summary>Does it work on Mac or Linux?</summary>
+        <p>Not right now — the build is Windows 64-bit only. The code is cross-platform, so a Mac or Linux build is possible if there's interest.</p></details>
+      <details><summary>Is this connected to CS:GO or Valve?</summary>
+        <p>No. It's an independent fan-made idle game that borrows the crate-opening format. It has no affiliation with, or endorsement from, Valve, and no real items, trading or money are involved anywhere in it.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <p class="eyebrow">Ready</p>
+    <h2>Go open some crates</h2>
+    <p class="lede">Free, 2.3 MB, no strings.</p>
+    <a class="dl" href="Case Clicker Setup.exe" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download Case Clicker
+    </a>
+    <div class="specs">
+      <div><b>Windows 10 / 11</b>64-bit</div>
+      <div><b>~13 MB</b>installed</div>
+      <div><b>No admin</b>rights needed</div>
+      <div><b>Offline</b>fully playable</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fl">
+      <a href="#features">Features</a><a href="#how">How it works</a><a href="#faq">FAQ</a>
+      <a href="Case Clicker.exe" download>Portable version</a>
+    </div>
+    <div>Case Clicker 1.3.0 — made by Foxyyyy</div>
+    <p class="tiny">An independent fan project. Not affiliated with, endorsed by, or connected to Valve Corporation or Counter-Strike. No real items, trading, gambling or money are involved — every credit and skin in the game is fictional and stays on your computer.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var SHOTS=[
+    ["click","Main screen","Click the crate, or let the bots handle it"],
+    ["cases","Cases","100 crates, each with better odds than the last"],
+    ["spin","The spin","Five seconds of deceleration onto your item"],
+    ["result","Unboxed","Seven rarity tiers, wear grades and StatTrak rolls"],
+    ["inv","Inventory","Every skin you keep boosts clicking and idle income"],
+    ["bots","Bots","100 autoclicker tiers across ten eras"],
+    ["upg","Upgrades","100 click upgrades, plus crit chance and payout"]
+  ];
+  var tabs=document.getElementById("shotTabs"),
+      img=document.getElementById("shotImg"),
+      cap=document.getElementById("shotCap"),
+      cur=0, timer=null;
+
+  SHOTS.forEach(function(s,i){
+    var b=document.createElement("button");
+    b.textContent=s[1];
+    if(i===0)b.className="on";
+    b.addEventListener("click",function(){ show(i); stop(); });
+    tabs.appendChild(b);
+    // preload so switching never flashes an empty frame
+    var pre=new Image(); pre.src="img/shot-"+s[0]+".jpg";
+  });
+
+  function show(i){
+    cur=i;
+    img.src="img/shot-"+SHOTS[i][0]+".jpg";
+    img.alt="Case Clicker — "+SHOTS[i][1];
+    cap.textContent=SHOTS[i][2];
+    for(var k=0;k<tabs.children.length;k++) tabs.children[k].className = k===i ? "on" : "";
+  }
+  function stop(){ if(timer){clearInterval(timer); timer=null;} }
+
+  // auto-advance until the visitor takes over, and only while it's on screen
+  function start(){ stop(); timer=setInterval(function(){ show((cur+1)%SHOTS.length); },3600); }
+  if(window.IntersectionObserver){
+    new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ if(!timer) start(); } else stop(); });
+    },{threshold:.25}).observe(img);
+  } else start();
+  document.addEventListener("visibilitychange",function(){ if(document.hidden)stop(); });
+})();
+</script>
+</body>
+</html>
