@@ -1,0 +1,110 @@
+================================================================================
+ CASE CLICKER - HOW UPDATES WORK AND HOW TO PUBLISH ONE
+================================================================================
+
+HOW IT WORKS FOR PLAYERS
+------------------------
+2.5 seconds after the game opens (and every 30 minutes after), it quietly
+checks one URL for a file called update.json. If that file names a version
+newer than the one installed, a gold bar slides in at the top of the game:
+
+    Version 1.3.0 is available
+    <your release notes here>        [UPDATE NOW] [SKIP THIS VERSION] [X]
+
+  UPDATE NOW    saves their progress, downloads the new installer, verifies it,
+                installs silently and reopens the game. About 10 seconds.
+  SKIP          never nags about that exact version again.
+  X             closes the bar; it comes back next launch.
+
+If the player is offline, the check fails silently and the game plays normally.
+Saves are never touched by an update.
+
+
+================================================================================
+ ONE-TIME SETUP
+================================================================================
+
+STEP 1 - Make a GitHub account and repo
+  Go to github.com, sign up, then create a new repository. Public is fine.
+  Call it whatever you like, e.g.  case-clicker
+  Your "repo path" is then:  yourusername/case-clicker
+
+STEP 2 - Point the game at it
+  Open the installed folder:
+      %LOCALAPPDATA%\Programs\Case Clicker
+  Edit  update.txt  and put your repo path on its own line at the bottom:
+
+      yourusername/case-clicker
+
+  That's the whole config. (You can also put a full https:// URL to an
+  update.json instead, if you'd rather host the feed somewhere else.)
+
+  Do this BEFORE you send the installer to anyone, so their copy already
+  knows where to look. Ask me and I'll bake it into the installer itself.
+
+
+================================================================================
+ PUBLISHING AN UPDATE
+================================================================================
+
+STEP 1 - Get a new build
+  Message me with what you want changed. I'll send back a new
+  "Case Clicker Setup.exe" with the version number bumped, plus the matching
+  update.json already filled in with the correct checksum.
+
+STEP 2 - Create the release on GitHub
+  On your repo page:  Releases -> Draft a new release
+    Tag:    v1.3.0            (must be a NEW tag each time)
+    Title:  1.3.0
+    Attach BOTH of these files:
+        CaseClickerSetup.exe
+        update.json
+    Publish release.
+
+STEP 3 - There is no step 3
+  Everyone with the game gets the bar within 30 minutes, or instantly on
+  their next launch.
+
+The download URL never changes between releases - GitHub always serves the
+newest release's files from  /releases/latest/download/<filename>  - so you
+never have to touch any links or rebuild anything.
+
+
+================================================================================
+ IMPORTANT RULES
+================================================================================
+
+* The version in update.json MUST be higher than what players have, or nothing
+  happens. Order is numeric: 1.10.0 is NEWER than 1.9.0.
+
+* Attach BOTH files to every release. update.json alone is a broken update;
+  the installer alone means nobody gets told about it.
+
+* NEVER hand-edit the sha256 in update.json. The game refuses to run an
+  installer whose checksum doesn't match, which is what stops someone who
+  hijacks the download from running code on your players' machines. If you
+  rebuild the installer, regenerate update.json with it.
+
+* Feeds must be https. A plain http:// feed or download is rejected outright.
+
+* Test it yourself first: install the old version, publish the release, open
+  the game, and watch the bar appear.
+
+
+================================================================================
+ IF YOU EVER BUILD IT YOURSELF
+================================================================================
+  ./make-release.sh 1.3.0 "Added three new cases and fixed the crit bug"
+
+  Set REPO first so the URL is right:
+      REPO=yourusername/case-clicker ./make-release.sh 1.3.0 "notes here"
+
+  It writes release/update.json with the correct checksum and copies the
+  installer to release/CaseClickerSetup.exe, ready to attach.
+
+
+================================================================================
+ TURNING UPDATES OFF
+================================================================================
+  Blank out update.txt (or delete it). The game then never contacts the
+  network at all.

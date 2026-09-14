@@ -1,0 +1,11 @@
+# build output
+*.exe
+*.syso
+srv*
+release/
+node_modules/
+package*.json
+
+# local state
+url.txt
+*.log

@@ -1,0 +1,3 @@
+# Case Clicker update feed
+# One line: "username/repo" for GitHub Releases, or a full https:// URL.
+flayniks/case-clicker

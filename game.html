@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CASE CLICKER</title>
+<style>
+:root{
+  --bg:#0e1015; --bg2:#15181f; --panel:#1b1f28; --panel2:#222734;
+  --line:#2e3442; --txt:#d6dde8; --dim:#7c8799;
+  --gold:#f0b90b; --green:#4caf50; --red:#eb4b4b;
+  --r0:#b0c3d9; --r1:#5e98d9; --r2:#4b69ff; --r3:#8847ff; --r4:#d32ce6; --r5:#eb4b4b; --r6:#ffd700;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--txt); overflow:hidden;
+  font:13px/1.45 "Segoe UI",Tahoma,sans-serif;
+  user-select:none; -webkit-user-select:none;
+}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ---------- top bar ---------- */
+#top{
+  display:flex;align-items:center;gap:18px;padding:10px 18px;
+  background:linear-gradient(180deg,#1c2029,#12151b);
+  border-bottom:2px solid var(--gold);flex:0 0 auto;
+}
+#logo{font-weight:800;letter-spacing:2px;font-size:15px;color:var(--gold)}
+#logo span{color:var(--txt)}
+.stat-chip{display:flex;flex-direction:column;line-height:1.1}
+.stat-chip b{font-size:16px;font-variant-numeric:tabular-nums}
+.stat-chip i{font-size:9px;letter-spacing:1.4px;color:var(--dim);font-style:normal;text-transform:uppercase}
+#top .spacer{margin-left:auto}
+#gemchip b{color:#54d1ff}
+#credchip b{color:var(--gold)}
+#psChip b{color:#b78cff}
+
+/* ---------- tabs ---------- */
+#tabs{display:flex;gap:2px;padding:0 14px;background:#12151b;flex:0 0 auto;border-bottom:1px solid var(--line)}
+.tab{
+  padding:9px 18px;font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--dim);
+  cursor:pointer;border-bottom:2px solid transparent;text-transform:uppercase;
+}
+.tab:hover{color:var(--txt);background:#171b23}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold);background:#1b1f28}
+.tab .badge{background:var(--red);color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:5px}
+
+/* ---------- panes ---------- */
+#main{flex:1 1 auto;overflow:hidden;position:relative}
+.pane{position:absolute;inset:0;overflow-y:auto;padding:18px;display:none}
+.pane.on{display:block}
+.pane::-webkit-scrollbar{width:9px}
+.pane::-webkit-scrollbar-thumb{background:#333a49;border-radius:5px}
+.pane::-webkit-scrollbar-track{background:#12151b}
+
+h2.sec{font-size:11px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin:18px 0 9px;
+  border-bottom:1px solid var(--line);padding-bottom:5px}
+h2.sec:first-child{margin-top:0}
+
+/* ---------- click pane ---------- */
+#clickWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;position:relative}
+#crate{
+  width:250px;height:250px;cursor:pointer;position:relative;
+  transition:transform .07s ease-out;filter:drop-shadow(0 12px 26px rgba(240,185,11,.22));
+}
+#crate:active{transform:scale(.93)}
+#clickInfo{text-align:center}
+#clickInfo .big{font-size:30px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+#clickInfo .sm{color:var(--dim);font-size:11px;letter-spacing:1px}
+#cps{color:var(--green);font-size:13px;font-weight:600}
+.float{
+  position:absolute;pointer-events:none;font-weight:800;font-size:17px;color:var(--gold);
+  animation:fl 1s ease-out forwards;text-shadow:0 2px 5px #000;z-index:5;
+}
+.float.crit{color:#fff;font-size:25px;text-shadow:0 0 12px var(--red),0 2px 5px #000}
+@keyframes fl{to{transform:translate(var(--dx),-95px);opacity:0}}
+
+/* ---------- generic cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:11px}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:5px;padding:11px 13px;display:flex;gap:11px;align-items:center;
+  cursor:pointer;transition:.12s;
+}
+.card:hover{background:var(--panel2);transform:translateY(-2px)}
+.card.locked{opacity:.42;cursor:not-allowed;transform:none!important}
+.card.afford{border-left-color:var(--green)}
+.card .ico{font-size:26px;width:34px;text-align:center;flex:0 0 auto}
+.card .body{flex:1;min-width:0}
+.card .body h3{font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.card .body h3 em{font-style:normal;color:var(--dim);font-size:10px;letter-spacing:1px}
+.card .body p{font-size:11px;color:var(--dim);margin:2px 0}
+.card .cost{font-weight:700;color:var(--gold);font-size:12px;font-variant-numeric:tabular-nums}
+.card.locked .cost{color:var(--red)}
+
+/* ---------- cases ---------- */
+#caseGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px}
+.crate{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:6px;padding:13px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
+}
+.crate:hover{border-color:var(--gold);transform:translateY(-3px)}
+.crate.locked{opacity:.4;cursor:not-allowed;transform:none!important;border-color:var(--line)}
+.crate .art{font-size:44px;margin-bottom:6px;filter:drop-shadow(0 4px 9px rgba(0,0,0,.6))}
+.crate h3{font-size:12px;letter-spacing:.6px;margin-bottom:3px}
+.crate .price{color:var(--gold);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.crate .odds{font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:.4px}
+
+/* ---------- roulette ---------- */
+#rouletteOv{position:fixed;inset:0;background:rgba(5,6,9,.93);z-index:60;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:22px;backdrop-filter:blur(3px)}
+#rouletteOv.on{display:flex}
+#rouletteBox{width:min(92vw,900px);height:150px;position:relative;overflow:hidden;
+  background:#101319;border:1px solid var(--line);border-radius:6px;
+  box-shadow:inset 0 0 45px rgba(0,0,0,.9)}
+#strip{display:flex;position:absolute;top:0;left:0;height:100%;will-change:transform}
+.ritem{width:130px;height:100%;flex:0 0 130px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;border-right:1px solid #0b0d11;position:relative}
+.ritem .g{font-size:38px}
+.ritem .n{font-size:9px;color:var(--dim);text-align:center;padding:0 5px;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+.ritem::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--rc)}
+.ritem{background:linear-gradient(180deg,#171b23,#0f1218)}
+#needle{position:absolute;left:50%;top:0;bottom:0;width:3px;background:var(--gold);
+  transform:translateX(-50%);z-index:3;box-shadow:0 0 14px var(--gold)}
+#rouletteTitle{font-size:12px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+
+#resultCard{display:none;flex-direction:column;align-items:center;gap:9px;
+  background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--rc,var(--gold));
+  padding:22px 42px;border-radius:6px;animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+#resultCard.on{display:flex}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+#resultCard .g{font-size:64px}
+#resultCard .nm{font-size:17px;font-weight:700}
+#resultCard .wr{font-size:11px;color:var(--dim);letter-spacing:1px}
+#resultCard .vl{font-size:21px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+.btnrow{display:flex;gap:9px;margin-top:5px}
+
+/* ---------- buttons ---------- */
+button{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  padding:9px 18px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);
+  border-radius:4px;cursor:pointer;transition:.12s}
+button:hover{background:#2c3342;border-color:var(--gold)}
+button.p{background:var(--gold);color:#141414;border-color:var(--gold)}
+button.p:hover{filter:brightness(1.15)}
+button.d{border-color:#5a2a2a;color:#ff8a8a}
+button.d:hover{background:#3a1c1c;border-color:var(--red)}
+button:disabled{opacity:.35;cursor:not-allowed;filter:none!important}
+
+/* ---------- inventory ---------- */
+#invBar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:13px}
+#invBar .info{color:var(--dim);font-size:11px;margin-right:auto}
+#invGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
+.skin{background:linear-gradient(180deg,#1d222c,#14171e);border:1px solid var(--line);
+  border-bottom:3px solid var(--rc);border-radius:5px;padding:9px;text-align:center;
+  cursor:pointer;transition:.12s;position:relative}
+.skin:hover{transform:translateY(-2px);border-color:var(--rc)}
+.skin .g{font-size:30px}
+.skin .n{font-size:10px;font-weight:600;margin:4px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skin .w{font-size:9px;color:var(--dim)}
+.skin .v{font-size:11px;color:var(--gold);font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.skin .st{position:absolute;top:4px;left:5px;font-size:8px;color:#ff9b26;font-weight:800;letter-spacing:.4px}
+.skin .sell{position:absolute;inset:auto 0 0 0;background:var(--red);color:#fff;font-size:9px;
+  padding:3px;opacity:0;transition:.12s;letter-spacing:1px;font-weight:700}
+.skin:hover .sell{opacity:1}
+
+/* ---------- stats / achievements ---------- */
+table.st{width:100%;border-collapse:collapse;font-size:12px}
+table.st td{padding:6px 9px;border-bottom:1px solid var(--line)}
+table.st td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--gold)}
+.ach{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);
+  border-radius:5px;padding:9px 11px;opacity:.4}
+.ach.got{opacity:1;border-color:var(--gold)}
+.ach .i{font-size:22px}
+.ach b{font-size:12px;display:block}
+.ach span{font-size:10px;color:var(--dim)}
+
+/* ---------- toast ---------- */
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column-reverse;gap:7px;z-index:80}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--gold);
+  padding:9px 15px;border-radius:4px;font-size:12px;animation:sl .25s ease-out;max-width:330px;
+  box-shadow:0 6px 18px rgba(0,0,0,.5)}
+@keyframes sl{from{transform:translateX(60px);opacity:0}}
+
+.divider{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:14px 0 2px;
+  font-size:10.5px;letter-spacing:2.4px;color:var(--dim);text-transform:uppercase;font-weight:800}
+.divider:first-child{margin-top:0}
+.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.divider em{font-style:normal;color:#5b6576;letter-spacing:.6px;font-weight:600;text-transform:none}
+.filters{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.filters .lbl{font-size:10.5px;letter-spacing:1.6px;color:var(--dim);text-transform:uppercase;
+  font-weight:700;margin-right:4px}
+.filters button{padding:6px 13px;font-size:10.5px;border-radius:16px}
+.filters button.on{background:var(--gold);border-color:var(--gold);color:#141414}
+.filters .count{margin-left:auto;font-size:11.5px;color:var(--dim)}
+#updBar{
+  display:none;align-items:center;gap:14px;padding:11px 18px;flex:0 0 auto;
+  background:linear-gradient(90deg,#2a2410,#1f2330);border-bottom:1px solid var(--gold);
+  animation:drop .3s ease-out;
+}
+#updBar.on{display:flex}
+@keyframes drop{from{transform:translateY(-100%);opacity:0}}
+#updBar .ico{font-size:19px}
+#updBar .txt{flex:1;min-width:0;font-size:13px;line-height:1.4}
+#updBar .txt b{color:var(--gold)}
+#updBar .txt span{color:var(--dim);display:block;font-size:11.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#updBar button{padding:7px 15px;font-size:10.5px}
+#updBar .x{background:none;border:none;color:var(--dim);font-size:19px;padding:0 5px;cursor:pointer}
+#updBar .x:hover{color:var(--txt);background:none}
+#prestigeBox{background:linear-gradient(135deg,#241a3a,#171a24);border:1px solid #4a3a6e;
+  border-radius:6px;padding:18px;margin-bottom:16px}
+#prestigeBox h3{color:#b78cff;font-size:14px;letter-spacing:1px;margin-bottom:5px}
+#prestigeBox p{font-size:11px;color:var(--dim);margin-bottom:11px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="logo">CASE<span>CLICKER</span></div>
+    <div class="stat-chip" id="credchip"><b id="tCred">0</b><i>Credits</i></div>
+    <div class="stat-chip"><b id="tCps" style="color:var(--green)">0/s</b><i>Per second</i></div>
+    <div class="stat-chip"><b id="tClick">1</b><i>Per click</i></div>
+    <div class="spacer"></div>
+    <div class="stat-chip" id="gemchip"><b id="tGems">0</b><i>Gems</i></div>
+    <div class="stat-chip" id="psChip"><b id="tMult">x1.00</b><i>Multiplier</i></div>
+  </div>
+
+  <div id="updBar">
+    <span class="ico">⬆</span>
+    <div class="txt"><b id="updTitle">Update available</b><span id="updNotes"></span></div>
+    <button class="p" id="updNow">Update now</button>
+    <button id="updSkip">Skip this version</button>
+    <button class="x" id="updLater" title="Remind me next launch">&times;</button>
+  </div>
+
+  <div id="tabs">
+    <div class="tab on" data-p="click">Click</div>
+    <div class="tab" data-p="upg">Upgrades</div>
+    <div class="tab" data-p="bots">Bots</div>
+    <div class="tab" data-p="cases">Cases</div>
+    <div class="tab" data-p="inv">Inventory <span class="badge" id="invCount">0</span></div>
+    <div class="tab" data-p="stats">Stats</div>
+  </div>
+
+  <div id="main">
+    <div class="pane on" id="p-click">
+      <div id="clickWrap">
+        <div id="clickInfo"><div class="big" id="bigCred">0</div><div class="sm">CREDITS</div></div>
+        <svg id="crate" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4a5568"/><stop offset="1" stop-color="#232a36"/>
+            </linearGradient>
+            <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5d6b80"/><stop offset="1" stop-color="#39424f"/>
+            </linearGradient>
+          </defs>
+          <path d="M28 62 L100 32 L172 62 L172 150 L100 180 L28 150 Z" fill="url(#cg)" stroke="#0c0e12" stroke-width="3"/>
+          <path d="M28 62 L100 92 L172 62 L100 32 Z" fill="url(#cg2)" stroke="#0c0e12" stroke-width="3"/>
+          <path d="M100 92 L100 180" stroke="#0c0e12" stroke-width="3"/>
+          <rect x="86" y="70" width="28" height="34" rx="4" fill="#f0b90b" stroke="#0c0e12" stroke-width="3"/>
+          <circle cx="100" cy="87" r="5" fill="#2a2113"/>
+          <path d="M40 108 L74 122 M40 124 L74 138" stroke="#8a94a6" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+          <path d="M160 108 L126 122 M160 124 L126 138" stroke="#8a94a6" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+        </svg>
+        <div id="clickInfo">
+          <div class="sm">CLICK THE CRATE &nbsp;·&nbsp; <span style="color:var(--txt)">SPACE</span> works too</div>
+          <div id="cps" style="margin-top:5px">+0/s from bots</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="p-upg"><h2 class="sec">Click Upgrades</h2><div id="upgBar"></div><div class="grid" id="upgGrid"></div>
+      <h2 class="sec">Multipliers &amp; Crits</h2><div class="grid" id="multGrid"></div></div>
+    <div class="pane" id="p-bots"><h2 class="sec">Autoclicker Bots</h2><div id="botBar"></div><div class="grid" id="botGrid"></div>
+      <h2 class="sec">Bot Upgrades</h2><div class="grid" id="botUpgGrid"></div></div>
+    <div class="pane" id="p-cases"><h2 class="sec">Open Cases</h2><div id="caseBar"></div><div id="caseGrid"></div></div>
+    <div class="pane" id="p-inv">
+      <div id="invBar">
+        <span class="info" id="invInfo"></span>
+        <button id="sellDupes">Sell all below Restricted</button>
+        <button class="d" id="sellAll">Sell everything</button>
+      </div>
+      <div id="invGrid"></div>
+    </div>
+    <div class="pane" id="p-stats">
+      <div id="prestigeBox">
+        <h3>◈ TRADE-UP CONTRACT</h3>
+        <p>Cash in your whole account for <b>Gems</b>. Gems compound — each one is worth <b>+5%</b> and a further <b>&times;1.015</b> to everything you earn. You lose credits, upgrades, bots and skins — gems and achievements stay forever.</p>
+        <div style="margin-bottom:11px;font-size:13px">Cashing out now gives: <b id="psGain" style="color:#b78cff">0</b> gems</div>
+        <button class="p" id="doPrestige">Trade up</button>
+      </div>
+      <h2 class="sec">Statistics</h2><table class="st" id="statTable"></table>
+      <h2 class="sec">Achievements <span id="achCount" style="color:var(--gold)"></span></h2>
+      <div class="grid" id="achGrid"></div>
+      <h2 class="sec">Save</h2>
+      <div class="btnrow" style="flex-wrap:wrap">
+        <button id="saveNow">Save now</button>
+        <button id="exportSave">Export to file</button>
+        <button id="importSave">Import from file</button>
+        <button class="d" id="wipe">Delete save</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+      <p style="color:var(--dim);font-size:11px;margin-top:9px;line-height:1.7">
+        Progress is stored on this PC at <b id="savePath" style="color:var(--txt)">%APPDATA%\CaseClicker\save.json</b><br>
+        Autosaves every 8 seconds, after every case you open, and again when you close the window.<br>
+        <span id="saveAgo" style="color:var(--green)"></span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="rouletteOv">
+  <div id="rouletteTitle">Unlocking container…</div>
+  <div id="rouletteBox"><div id="strip"></div><div id="needle"></div></div>
+  <div id="resultCard">
+    <div class="g"></div><div class="nm"></div><div class="wr"></div><div class="vl"></div>
+    <div class="btnrow">
+      <button class="p" id="rKeep">Keep it</button>
+      <button id="rSell">Sell</button>
+      <button id="rAgain">Open another</button>
+    </div>
+  </div>
+</div>
+<div id="toasts"></div>
+<script>
+"use strict";
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const SUF=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc",
+  "UDc","DDc","TDc","QaDc","QiDc","SxDc","SpDc","OcDc","NoDc","Vg",
+  "UVg","DVg","TVg","QaVg","QiVg","SxVg","SpVg","OcVg","NoVg","Tg",
+  "UTg","DTg","TTg","QaTg","QiTg"];
+function fmt(n){
+  if(!isFinite(n))return "∞";
+  if(n<0)return "-"+fmt(-n);
+  if(n<1000)return (n<10&&n%1!==0)?n.toFixed(1):Math.floor(n).toString();
+  // 1e33/1000^10 lands on 999.9999999999999 in floating point, which would
+  // leave it displayed as "1000No" instead of rolling over to "1.00Dc".
+  let t=0; while(n>=999.9995&&t<SUF.length-1){n/=1000;t++;}
+  if(t===SUF.length-1&&n>=1000) return n.toExponential(2).replace("e+","e"); // past the table
+  return n.toFixed(n<10?2:n<100?1:0)+SUF[t];
+}
+
+/* ============ content ============ */
+const RARITY=[
+  {k:0,n:"Consumer Grade",c:"#b0c3d9",m:1},
+  {k:1,n:"Industrial Grade",c:"#5e98d9",m:3},
+  {k:2,n:"Mil-Spec",c:"#4b69ff",m:9},
+  {k:3,n:"Restricted",c:"#8847ff",m:30},
+  {k:4,n:"Classified",c:"#d32ce6",m:110},
+  {k:5,n:"Covert",c:"#eb4b4b",m:420},
+  {k:6,n:"★ Exceedingly Rare",c:"#ffd700",m:2600}
+];
+const WEARS=[
+  {n:"Factory New",m:1.00},{n:"Minimal Wear",m:0.78},{n:"Field-Tested",m:0.55},
+  {n:"Well-Worn",m:0.37},{n:"Battle-Scarred",m:0.24}
+];
+const GUNS=["AK-47","M4A4","AWP","Desert Eagle","USP-S","Glock-18","MP9","P90","Famas","Galil","SG 553","Nova","MAC-10","Five-SeveN","Tec-9","UMP-45","XM1014","Negev","P250","Dual Berettas"];
+const KNIVES=["★ Karambit","★ Butterfly Knife","★ M9 Bayonet","★ Talon Knife","★ Skeleton Knife","★ Gloves"];
+const PAINTS=["Redline","Asiimov","Fade","Hyper Beast","Neon Rider","Dragon Lore","Vulcan","Bloodsport","Printstream","Case Hardened","Crimson Web","Slaughter","Doppler","Gungnir","Wild Lotus","Fire Serpent","Howl","Nightmare","Emerald","Frontside Misty","Cortex","Water Elemental","Lore","Marble Fade"];
+const GEM=["🔫","🔪","🧤","💠","🎯","🛡️","⚡","🔥","❄️","☠️","🌀","💥"];
+
+const BOTS=[
+{id:"b1",n:"Macro Script",ico:"📜",era:0,base:15.0,cps:0.15},
+{id:"b2",n:"Click Bot",ico:"🤖",era:0,base:117.0,cps:1.245},
+{id:"b3",n:"Auto Mouse",ico:"🖱️",era:0,base:912.5999999999999,cps:10.333500000000003},
+{id:"b4",n:"Rubber Band",ico:"🪢",era:0,base:7118.28,cps:85.76805000000002},
+{id:"b5",n:"Turbo Mouse",ico:"⚡",era:0,base:55522.583999999995,cps:711.8748150000002},
+{id:"b6",n:"Script Kiddie",ico:"👾",era:0,base:433076.1551999999,cps:5908.560964500002},
+{id:"b7",n:"Keyboard Macro",ico:"⌨️",era:0,base:3377994.01056,cps:49041.05600535002},
+{id:"b8",n:"Mouse Jiggler",ico:"🎛️",era:0,base:26348353.282367997,cps:407040.7648444053},
+{id:"b9",n:"Hotkey Daemon",ico:"🔑",era:0,base:205517155.60247037,cps:3378438.3482085634},
+{id:"b10",n:"Loop Script",ico:"🔁",era:0,base:1603033813.6992688,cps:28041038.29013108},
+{id:"b11",n:"Trade Bot",ico:"💱",era:1,base:12503663746.854298,cps:232740617.808088},
+{id:"b12",n:"Alt Account",ico:"👥",era:1,base:97528577225.46352,cps:1931747127.8071306},
+{id:"b13",n:"Farm Account",ico:"🌾",era:1,base:760722902358.6154,cps:16033501160.799185},
+{id:"b14",n:"Idle Miner",ico:"⛏️",era:1,base:5933638638397.199,cps:133078059634.63324},
+{id:"b15",n:"Bot Lobby",ico:"🎮",era:1,base:46282381379498.16,cps:1104547894967.456},
+{id:"b16",n:"Smurf Army",ico:"🕶️",era:1,base:361002574760085.56,cps:9167747528229.885},
+{id:"b17",n:"Key Farmer",ico:"🗝️",era:1,base:2815820083128667.5,cps:76092304484308.06},
+{id:"b18",n:"Drop Farmer",ico:"📦",era:1,base:2.196339664840361e+16,cps:631566127219756.9},
+{id:"b19",n:"Case Runner",ico:"🏃",era:1,base:1.7131449385754813e+17,cps:5241998855923983.0},
+{id:"b20",n:"Inventory Mule",ico:"🐴",era:1,base:1.3362530520888753e+18,cps:4.3508590504169064e+16},
+{id:"b21",n:"Botnet",ico:"🕸️",era:2,base:1.0422773806293228e+19,cps:3.611213011846032e+17},
+{id:"b22",n:"Proxy Swarm",ico:"🌐",era:2,base:8.129763568908717e+19,cps:2.997306799832207e+18},
+{id:"b23",n:"VPN Cluster",ico:"🔒",era:2,base:6.3412155837488e+20,cps:2.4877646438607323e+19},
+{id:"b24",n:"Packet Miner",ico:"📡",era:2,base:4.946148155324064e+21,cps:2.0648446544044078e+20},
+{id:"b25",n:"Zombie Fleet",ico:"🧟",era:2,base:3.85799556115277e+22,cps:1.7138210631556588e+21},
+{id:"b26",n:"Relay Node",ico:"📶",era:2,base:3.0092365376991605e+23,cps:1.4224714824191968e+22},
+{id:"b27",n:"Shadow Net",ico:"🌑",era:2,base:2.3472044994053447e+24,cps:1.1806513304079336e+23},
+{id:"b28",n:"Grid Worker",ico:"⚙️",era:2,base:1.8308195095361689e+25,cps:9.799406042385848e+23},
+{id:"b29",n:"Mesh Farm",ico:"🕳️",era:2,base:1.4280392174382117e+26,cps:8.133507015180256e+24},
+{id:"b30",n:"Dark Pool",ico:"🎱",era:2,base:1.1138705896018051e+27,cps:6.750810822599612e+25},
+{id:"b31",n:"Server Rack",ico:"🖥️",era:3,base:8.68819059889408e+27,cps:5.603172982757679e+26},
+{id:"b32",n:"GPU Rig",ico:"🎨",era:3,base:6.7767886671373826e+28,cps:4.650633575688874e+27},
+{id:"b33",n:"Mining Farm",ico:"🏭",era:3,base:5.285895160367158e+29,cps:3.8600258678217656e+28},
+{id:"b34",n:"Data Centre",ico:"🏢",era:3,base:4.122998225086383e+30,cps:3.203821470292066e+29},
+{id:"b35",n:"Cooling Array",ico:"❄️",era:3,base:3.2159386155673785e+31,cps:2.659171820342415e+30},
+{id:"b36",n:"ASIC Cluster",ico:"🔲",era:3,base:2.5084321201425555e+32,cps:2.2071126108842043e+31},
+{id:"b37",n:"Blade Server",ico:"🗄️",era:3,base:1.9565770537111932e+33,cps:1.83190346703389e+32},
+{id:"b38",n:"Fibre Trunk",ico:"🔌",era:3,base:1.5261301018947307e+34,cps:1.5204798776381287e+33},
+{id:"b39",n:"Rack Row",ico:"📚",era:3,base:1.1903814794778898e+35,cps:1.2619982984396468e+34},
+{id:"b40",n:"Cold Storage Vault",ico:"🧊",era:3,base:9.284975539927541e+35,cps:1.047458587704907e+35},
+{id:"b41",n:"Neural Net",ico:"🧠",era:4,base:7.242280921143481e+36,cps:8.69390627795073e+35},
+{id:"b42",n:"AI Trader",ico:"📈",era:4,base:5.648979118491915e+37,cps:7.215942210699106e+36},
+{id:"b43",n:"Machine Broker",ico:"🤝",era:4,base:4.4062037124236945e+38,cps:5.989232034880259e+37},
+{id:"b44",n:"Deep Model",ico:"🔬",era:4,base:3.436838895690481e+39,cps:4.971062588950615e+38},
+{id:"b45",n:"Transformer Farm",ico:"🔮",era:4,base:2.6807343386385755e+40,cps:4.125981948829011e+39},
+{id:"b46",n:"Inference Cluster",ico:"☁️",era:4,base:2.090972784138089e+41,cps:3.424565017528079e+40},
+{id:"b47",n:"Sentient Script",ico:"👁️",era:4,base:1.630958771627709e+42,cps:2.8423889645483057e+41},
+{id:"b48",n:"Agent Swarm",ico:"🐝",era:4,base:1.272147841869613e+43,cps:2.3591828405750942e+42},
+{id:"b49",n:"Model Foundry",ico:"🏗️",era:4,base:9.922753166582982e+43,cps:1.9581217576773283e+43},
+{id:"b50",n:"Oracle Engine",ico:"🔱",era:4,base:7.739747469934726e+44,cps:1.6252410588721827e+44},
+{id:"b51",n:"Quantum Clicker",ico:"⚛️",era:5,base:6.037003026549086e+45,cps:1.3489500788639118e+45},
+{id:"b52",n:"Qubit Array",ico:"🎲",era:5,base:4.708862360708287e+46,cps:1.1196285654570468e+46},
+{id:"b53",n:"Entangled Pair",ico:"🔗",era:5,base:3.672912641352464e+47,cps:9.29291709329349e+46},
+{id:"b54",n:"Superposition Farm",ico:"🌫️",era:5,base:2.8648718602549216e+48,cps:7.713121187433596e+47},
+{id:"b55",n:"Decoherence Engine",ico:"💫",era:5,base:2.234600050998839e+49,cps:6.401890585569886e+48},
+{id:"b56",n:"Quantum Annealer",ico:"🧮",era:5,base:1.7429880397790943e+50,cps:5.313569186023006e+49},
+{id:"b57",n:"Photonic Core",ico:"💡",era:5,base:1.3595306710276935e+51,cps:4.410262424399095e+50},
+{id:"b58",n:"Spin Lattice",ico:"🧲",era:5,base:1.060433923401601e+52,cps:3.660517812251249e+51},
+{id:"b59",n:"Topological Weave",ico:"🪢",era:5,base:8.271384602532487e+52,cps:3.0382297841685376e+52},
+{id:"b60",n:"Coherence Reactor",ico:"☢️",era:5,base:6.4516799899753394e+53,cps:2.521730720859886e+53},
+{id:"b61",n:"Time Dilator",ico:"⏳",era:6,base:5.032310392180765e+54,cps:2.0930364983137056e+54},
+{id:"b62",n:"Chrono Loop",ico:"🔄",era:6,base:3.925202105900997e+55,cps:1.7372202936003758e+55},
+{id:"b63",n:"Causality Engine",ico:"➿",era:6,base:3.061657642602777e+56,cps:1.441892843688312e+56},
+{id:"b64",n:"Entropy Reverser",ico:"🌡️",era:6,base:2.3880929612301662e+57,cps:1.196771060261299e+57},
+{id:"b65",n:"Vacuum Tap",ico:"🕯️",era:6,base:1.8627125097595296e+58,cps:9.933199800168783e+57},
+{id:"b66",n:"Zero Point Array",ico:"0️⃣",era:6,base:1.452915757612433e+59,cps:8.244555834140091e+58},
+{id:"b67",n:"Higgs Collector",ico:"🧿",era:6,base:1.1332742909376977e+60,cps:6.842981342336276e+59},
+{id:"b68",n:"Gluon Forge",ico:"🎇",era:6,base:8.839539469314041e+60,cps:5.67967451413911e+60},
+{id:"b69",n:"Fusion Spire",ico:"🔥",era:6,base:6.894840786064953e+61,cps:4.7141298467354613e+61},
+{id:"b70",n:"Antimatter Well",ico:"💥",era:6,base:5.377975813130663e+62,cps:3.912727772790433e+62},
+{id:"b71",n:"Dyson Swarm",ico:"🛰️",era:7,base:4.194821134241917e+63,cps:3.2475640514160596e+63},
+{id:"b72",n:"Star Lifter",ico:"⭐",era:7,base:3.271960484708695e+64,cps:2.69547816267533e+64},
+{id:"b73",n:"Neutron Press",ico:"🌟",era:7,base:2.5521291780727824e+65,cps:2.237246875020524e+65},
+{id:"b74",n:"Pulsar Array",ico:"📻",era:7,base:1.9906607588967698e+66,cps:1.8569149062670352e+66},
+{id:"b75",n:"Black Hole Tap",ico:"🕳️",era:7,base:1.5527153919394807e+67,cps:1.5412393722016393e+67},
+{id:"b76",n:"Accretion Mill",ico:"🌀",era:7,base:1.2111180057127948e+68,cps:1.2792286789273606e+68},
+{id:"b77",n:"Quasar Engine",ico:"💠",era:7,base:9.4467204445598e+68,cps:1.0617598035097096e+69},
+{id:"b78",n:"Magnetar Coil",ico:"🧭",era:7,base:7.368441946756643e+69,cps:8.81260636913059e+69},
+{id:"b79",n:"Singularity Core",ico:"⚫",era:7,base:5.747384718470181e+70,cps:7.314463286378389e+70},
+{id:"b80",n:"Event Horizon Loom",ico:"🎭",era:7,base:4.482960080406741e+71,cps:6.071004527694064e+71},
+{id:"b81",n:"Galactic Exchange",ico:"🌌",era:8,base:3.496708862717258e+72,cps:5.0389337579860736e+72},
+{id:"b82",n:"Nebula Refinery",ico:"☄️",era:8,base:2.7274329129194614e+73,cps:4.182315019128442e+73},
+{id:"b83",n:"Cluster Broker",ico:"🔭",era:8,base:2.12739767207718e+74,cps:3.471321465876607e+74},
+{id:"b84",n:"Void Harvester",ico:"🌊",era:8,base:1.6593701842202003e+75,cps:2.881196816677584e+75},
+{id:"b85",n:"Dark Matter Net",ico:"🌑",era:8,base:1.2943087436917563e+76,cps:2.391393357842395e+76},
+{id:"b86",n:"Cosmic Web Node",ico:"🕷️",era:8,base:1.0095608200795698e+77,cps:1.984856487009188e+77},
+{id:"b87",n:"Filament Tap",ico:"🧵",era:8,base:7.874574396620645e+77,cps:1.647430884217626e+78},
+{id:"b88",n:"Supercluster Mint",ico:"🏛️",era:8,base:6.1421680293641026e+78,cps:1.3673676339006297e+79},
+{id:"b89",n:"Great Attractor",ico:"🧲",era:8,base:4.790891062904e+79,cps:1.1349151361375227e+80},
+{id:"b90",n:"Hubble Engine",ico:"📐",era:8,base:3.7368950290651196e+80,cps:9.41979562994144e+80},
+{id:"b91",n:"Multiverse Market",ico:"♾️",era:9,base:2.9147781226707934e+81,cps:7.818430372851395e+81},
+{id:"b92",n:"Timeline Broker",ico:"⏱️",era:9,base:2.2735269356832186e+82,cps:6.489297209466659e+82},
+{id:"b93",n:"Reality Forge",ico:"🛠️",era:9,base:1.7733510098329106e+83,cps:5.386116683857327e+83},
+{id:"b94",n:"Axiom Engine",ico:"📜",era:9,base:1.3832137876696702e+84,cps:4.4704768476015825e+84},
+{id:"b95",n:"Infinity Loom",ico:"🧬",era:9,base:1.0789067543823427e+85,cps:3.710495783509313e+85},
+{id:"b96",n:"Omega Processor",ico:"Ω",era:9,base:8.415472684182274e+85,cps:3.0797115003127305e+86},
+{id:"b97",n:"Concept Miner",ico:"💭",era:9,base:6.564068693662173e+86,cps:2.5561605452595663e+87},
+{id:"b98",n:"The Architect",ico:"🏗️",era:9,base:5.119973581056495e+87,cps:2.1216132525654404e+88},
+{id:"b99",n:"Prime Mover",ico:"👑",era:9,base:3.993579393224066e+88,cps:1.7609389996293154e+89},
+{id:"b100",n:"The Unboxer",ico:"🎁",era:9,base:3.114991926714771e+89,cps:1.461579369692332e+90},
+];
+const CLICK_UPG=[
+{id:"cu1",n:"Mouse Grease",ico:"🖱️",era:0,base:25.0,g:1.18,add:1.0},
+{id:"cu2",n:"Mechanical Switches",ico:"⌨️",era:0,base:175.0,g:1.18,add:7.3},
+{id:"cu3",n:"Gaming Chair",ico:"🪑",era:0,base:1225.0,g:1.18,add:53.29},
+{id:"cu4",n:"Wrist Brace",ico:"🩹",era:0,base:8575.0,g:1.18,add:389.017},
+{id:"cu5",n:"Optical Sensor",ico:"🔦",era:0,base:60025.0,g:1.18,add:2839.8241},
+{id:"cu6",n:"Braided Cable",ico:"🧵",era:0,base:420175.0,g:1.18,add:20730.71593},
+{id:"cu7",n:"1000Hz Polling",ico:"📊",era:0,base:2941225.0,g:1.18,add:151334.22628899998},
+{id:"cu8",n:"Lighter Springs",ico:"🌀",era:0,base:20588575.0,g:1.18,add:1104739.8519096998},
+{id:"cu9",n:"Gaming Mousepad",ico:"🟦",era:0,base:144120025.0,g:1.18,add:8064600.918940809},
+{id:"cu10",n:"Custom Grip Tape",ico:"🎗️",era:0,base:1008840175.0,g:1.18,add:58871586.7082679},
+{id:"cu11",n:"Drop Hack",ico:"📉",era:1,base:7061881225.0,g:1.18,add:429762582.9703557},
+{id:"cu12",n:"Macro Firmware",ico:"💾",era:1,base:49433168575.0,g:1.18,add:3137266855.683596},
+{id:"cu13",n:"Overclocked Mouse",ico:"🔥",era:1,base:346032180025.0,g:1.18,add:22902048046.490253},
+{id:"cu14",n:"Titanium Switches",ico:"🔩",era:1,base:2422225260175.0,g:1.18,add:167184950739.37885},
+{id:"cu15",n:"Hall Effect Sensor",ico:"🧲",era:1,base:16955576821225.0,g:1.18,add:1220450140397.4656},
+{id:"cu16",n:"Zero Debounce",ico:"🚫",era:1,base:118689037748575.0,g:1.18,add:8909286024901.498},
+{id:"cu17",n:"8K Wireless",ico:"📡",era:1,base:830823264240025.0,g:1.18,add:65037787981780.93},
+{id:"cu18",n:"Featherweight Shell",ico:"🪶",era:1,base:5815762849680175.0,g:1.18,add:474775852267000.8},
+{id:"cu19",n:"Magnetic Glide",ico:"🧊",era:1,base:4.0710339947761224e+16,g:1.18,add:3465863721549105.5},
+{id:"cu20",n:"Carbon Skates",ico:"⬛",era:1,base:2.849723796343286e+17,g:1.18,add:2.530080516730847e+16},
+{id:"cu21",n:"Global Elite Aim",ico:"🎖️",era:2,base:1.9948066574403e+18,g:1.18,add:1.8469587772135184e+17},
+{id:"cu22",n:"Muscle Memory",ico:"🧠",era:2,base:1.3963646602082101e+19,g:1.18,add:1.3482799073658683e+18},
+{id:"cu23",n:"Reflex Training",ico:"🏃",era:2,base:9.77455262145747e+19,g:1.18,add:9.84244332377084e+18},
+{id:"cu24",n:"Pro Wrist",ico:"💪",era:2,base:6.842186835020229e+20,g:1.18,add:7.184983626352712e+19},
+{id:"cu25",n:"Tournament Form",ico:"🏆",era:2,base:4.78953078451416e+21,g:1.18,add:5.2450380472374795e+20},
+{id:"cu26",n:"Frame Perfect",ico:"🎞️",era:2,base:3.352671549159912e+22,g:1.18,add:3.8288777744833603e+21},
+{id:"cu27",n:"Tick Rate Mastery",ico:"📶",era:2,base:2.3468700844119384e+23,g:1.18,add:2.7950807753728526e+22},
+{id:"cu28",n:"Input Buffer",ico:"📥",era:2,base:1.642809059088357e+24,g:1.18,add:2.0404089660221824e+23},
+{id:"cu29",n:"Predictive Aim",ico:"🎯",era:2,base:1.14996634136185e+25,g:1.18,add:1.489498545196193e+24},
+{id:"cu30",n:"Flow State",ico:"🌊",era:2,base:8.04976438953295e+25,g:1.18,add:1.087333937993221e+25},
+{id:"cu31",n:"Neural Link",ico:"🧠",era:3,base:5.634835072673064e+26,g:1.18,add:7.937537747350513e+25},
+{id:"cu32",n:"Cortex Implant",ico:"🔌",era:3,base:3.944384550871145e+27,g:1.18,add:5.794402555565874e+26},
+{id:"cu33",n:"Synaptic Boost",ico:"⚡",era:3,base:2.7610691856098017e+28,g:1.18,add:4.229913865563088e+27},
+{id:"cu34",n:"Myelin Overdrive",ico:"🧬",era:3,base:1.932748429926861e+29,g:1.18,add:3.0878371218610545e+28},
+{id:"cu35",n:"Motor Cortex Tune",ico:"🗺️",era:3,base:1.3529239009488026e+30,g:1.18,add:2.2541210989585695e+29},
+{id:"cu36",n:"Dopamine Loop",ico:"💊",era:3,base:9.47046730664162e+30,g:1.18,add:1.6455084022397557e+30},
+{id:"cu37",n:"Thalamic Bypass",ico:"🛤️",era:3,base:6.629327114649134e+31,g:1.18,add:1.2012211336350218e+31},
+{id:"cu38",n:"Reflex Arc Rewire",ico:"🔁",era:3,base:4.640528980254394e+32,g:1.18,add:8.768914275535658e+31},
+{id:"cu39",n:"Brainstem Overclock",ico:"🎚️",era:3,base:3.2483702861780756e+33,g:1.18,add:6.40130742114103e+32},
+{id:"cu40",n:"Nerve Lattice",ico:"🕸️",era:3,base:2.273859200324653e+34,g:1.18,add:4.672954417432952e+33},
+{id:"cu41",n:"Bionic Hand",ico:"🦾",era:4,base:1.591701440227257e+35,g:1.18,add:3.411256724726055e+34},
+{id:"cu42",n:"Servo Tendons",ico:"🔧",era:4,base:1.1141910081590799e+36,g:1.18,add:2.49021740905002e+35},
+{id:"cu43",n:"Graphene Bones",ico:"💎",era:4,base:7.79933705711356e+36,g:1.18,add:1.8178587086065144e+36},
+{id:"cu44",n:"Piezo Fingertips",ico:"👆",era:4,base:5.459535939979491e+37,g:1.18,add:1.3270368572827556e+37},
+{id:"cu45",n:"Hydraulic Knuckles",ico:"🛠️",era:4,base:3.821675157985644e+38,g:1.18,add:9.687369058164115e+37},
+{id:"cu46",n:"Actuator Array",ico:"🎛️",era:4,base:2.675172610589951e+39,g:1.18,add:7.071779412459805e+38},
+{id:"cu47",n:"Exo Glove",ico:"🧤",era:4,base:1.8726208274129656e+40,g:1.18,add:5.162398971095657e+39},
+{id:"cu48",n:"Titanium Phalanx",ico:"🦴",era:4,base:1.310834579189076e+41,g:1.18,add:3.7685512488998295e+40},
+{id:"cu49",n:"Nanofibre Sinew",ico:"🧶",era:4,base:9.175842054323532e+41,g:1.18,add:2.7510424116968753e+41},
+{id:"cu50",n:"Kinetic Amplifier",ico:"📣",era:4,base:6.423089438026471e+42,g:1.18,add:2.008260960538719e+42},
+{id:"cu51",n:"Time Compression",ico:"⏳",era:5,base:4.49616260661853e+43,g:1.18,add:1.466030501193265e+43},
+{id:"cu52",n:"Bullet Time",ico:"🔫",era:5,base:3.147313824632971e+44,g:1.18,add:1.0702022658710834e+44},
+{id:"cu53",n:"Chrono Trigger",ico:"⏰",era:5,base:2.20311967724308e+45,g:1.18,add:7.812476540858908e+44},
+{id:"cu54",n:"Tachyon Input",ico:"💫",era:5,base:1.542183774070156e+46,g:1.18,add:5.7031078748270024e+45},
+{id:"cu55",n:"Retrocausal Click",ico:"↩️",era:5,base:1.079528641849109e+47,g:1.18,add:4.163268748623712e+46},
+{id:"cu56",n:"Temporal Buffer",ico:"📦",era:5,base:7.556700492943764e+47,g:1.18,add:3.0391861864953097e+47},
+{id:"cu57",n:"Clock Skew",ico:"🕰️",era:5,base:5.2896903450606345e+48,g:1.18,add:2.2186059161415758e+48},
+{id:"cu58",n:"Second Splitter",ico:"✂️",era:5,base:3.702783241542444e+49,g:1.18,add:1.6195823187833504e+49},
+{id:"cu59",n:"Instant Register",ico:"⚡",era:5,base:2.591948269079711e+50,g:1.18,add:1.1822950927118457e+50},
+{id:"cu60",n:"Frozen Moment",ico:"🧊",era:5,base:1.814363788355798e+51,g:1.18,add:8.630754176796474e+50},
+{id:"cu61",n:"Quantum Tunnel",ico:"🌀",era:6,base:1.2700546518490584e+52,g:1.18,add:6.300450549061426e+51},
+{id:"cu62",n:"Superposed Input",ico:"🎲",era:6,base:8.890382562943409e+52,g:1.18,add:4.5993289008148406e+52},
+{id:"cu63",n:"Probability Bias",ico:"🎰",era:6,base:6.2232677940603854e+53,g:1.18,add:3.3575100975948335e+53},
+{id:"cu64",n:"Wavefunction Collapse",ico:"📉",era:6,base:4.35628745584227e+54,g:1.18,add:2.4509823712442285e+54},
+{id:"cu65",n:"Entangled Cursor",ico:"🔗",era:6,base:3.0494012190895894e+55,g:1.18,add:1.7892171310082867e+55},
+{id:"cu66",n:"Zeno Effect",ico:"🧿",era:6,base:2.1345808533627122e+56,g:1.18,add:1.3061285056360492e+56},
+{id:"cu67",n:"Uncertainty Exploit",ico:"❓",era:6,base:1.4942065973538989e+57,g:1.18,add:9.53473809114316e+56},
+{id:"cu68",n:"Phase Shift",ico:"🌈",era:6,base:1.045944618147729e+58,g:1.18,add:6.960358806534506e+57},
+{id:"cu69",n:"Tunnelling Diode",ico:"🔌",era:6,base:7.321612327034103e+58,g:1.18,add:5.081061928770189e+58},
+{id:"cu70",n:"Observer Effect",ico:"👁️",era:6,base:5.125128628923872e+59,g:1.18,add:3.7091752080022384e+59},
+{id:"cu71",n:"Gravity Assist",ico:"🪐",era:7,base:3.5875900402467104e+60,g:1.18,add:2.707697901841634e+60},
+{id:"cu72",n:"Inertial Dampener",ico:"🛡️",era:7,base:2.511313028172698e+61,g:1.18,add:1.9766194683443928e+61},
+{id:"cu73",n:"Mass Driver",ico:"🚀",era:7,base:1.7579191197208882e+62,g:1.18,add:1.4429322118914066e+62},
+{id:"cu74",n:"Kinetic Singularity",ico:"⚫",era:7,base:1.2305433838046219e+63,g:1.18,add:1.0533405146807269e+63},
+{id:"cu75",n:"Warp Tap",ico:"🌌",era:7,base:8.613803686632352e+63,g:1.18,add:7.689385757169305e+63},
+{id:"cu76",n:"Fold Space",ico:"📐",era:7,base:6.029662580642648e+64,g:1.18,add:5.613251602733593e+64},
+{id:"cu77",n:"Graviton Press",ico:"🏋️",era:7,base:4.220763806449853e+65,g:1.18,add:4.0976736699955226e+65},
+{id:"cu78",n:"Tidal Force",ico:"🌊",era:7,base:2.9545346645148973e+66,g:1.18,add:2.9913017790967316e+66},
+{id:"cu79",n:"Escape Velocity",ico:"🛸",era:7,base:2.0681742651604277e+67,g:1.18,add:2.183650298740614e+67},
+{id:"cu80",n:"Lagrange Hold",ico:"⚖️",era:7,base:1.4477219856122994e+68,g:1.18,add:1.594064718080648e+68},
+{id:"cu81",n:"Stellar Impact",ico:"☄️",era:8,base:1.0134053899286097e+69,g:1.18,add:1.163667244198873e+69},
+{id:"cu82",n:"Supernova Tap",ico:"💥",era:8,base:7.093837729500267e+69,g:1.18,add:8.494770882651774e+69},
+{id:"cu83",n:"Nova Cascade",ico:"✨",era:8,base:4.9656864106501874e+70,g:1.18,add:6.201182744335795e+70},
+{id:"cu84",n:"Solar Flare",ico:"🔆",era:8,base:3.475980487455131e+71,g:1.18,add:4.52686340336513e+71},
+{id:"cu85",n:"Coronal Surge",ico:"🌞",era:8,base:2.433186341218592e+72,g:1.18,add:3.304610284456545e+72},
+{id:"cu86",n:"Photon Hammer",ico:"🔨",era:8,base:1.7032304388530143e+73,g:1.18,add:2.4123655076532776e+73},
+{id:"cu87",n:"Plasma Lance",ico:"🗡️",era:8,base:1.19226130719711e+74,g:1.18,add:1.7610268205868925e+74},
+{id:"cu88",n:"Fusion Strike",ico:"💢",era:8,base:8.345829150379769e+74,g:1.18,add:1.2855495790284316e+75},
+{id:"cu89",n:"Radiance Burst",ico:"🌟",era:8,base:5.842080405265839e+75,g:1.18,add:9.38451192690755e+75},
+{id:"cu90",n:"Helios Protocol",ico:"🛕",era:8,base:4.089456283686087e+76,g:1.18,add:6.850693706642511e+76},
+{id:"cu91",n:"Reality Click",ico:"🌍",era:9,base:2.862619398580261e+77,g:1.18,add:5.001006405849034e+77},
+{id:"cu92",n:"Axiom Override",ico:"📜",era:9,base:2.0038335790061826e+78,g:1.18,add:3.650734676269794e+78},
+{id:"cu93",n:"Concept Tap",ico:"💭",era:9,base:1.402683505304328e+79,g:1.18,add:2.6650363136769497e+79},
+{id:"cu94",n:"Narrative Edit",ico:"✍️",era:9,base:9.818784537130295e+79,g:1.18,add:1.945476508984173e+80},
+{id:"cu95",n:"Root Access",ico:"🔑",era:9,base:6.873149175991207e+80,g:1.18,add:1.4201978515584464e+81},
+{id:"cu96",n:"Admin Privilege",ico:"👑",era:9,base:4.811204423193845e+81,g:1.18,add:1.0367444316376658e+82},
+{id:"cu97",n:"Source Patch",ico:"🧑‍💻",era:9,base:3.367843096235691e+82,g:1.18,add:7.568234350954961e+82},
+{id:"cu98",n:"Divine Mandate",ico:"⛩️",era:9,base:2.357490167364984e+83,g:1.18,add:5.524811076197121e+83},
+{id:"cu99",n:"First Cause",ico:"🥚",era:9,base:1.6502431171554887e+84,g:1.18,add:4.033112085623899e+84},
+{id:"cu100",n:"The Final Click",ico:"🏁",era:9,base:1.1551701820088421e+85,g:1.18,add:2.9441718225054458e+85},
+];
+const CASES=[
+{id:"c1",n:"Chroma Case",art:"📦",era:0,cost:500.0,base:83.33333333333333,odds:[0.487234, 0.272851, 0.14617, 0.058468, 0.024362, 0.009745, 0.001169]},
+{id:"c2",n:"Prisma Case",art:"📦",era:0,cost:3900.0,base:650.0,odds:[0.479555, 0.274117, 0.149085, 0.060349, 0.025394, 0.010257, 0.001243]},
+{id:"c3",n:"Spectrum Case",art:"📦",era:0,cost:30419.999999999996,base:5069.999999999999,odds:[0.471846, 0.2753, 0.152008, 0.062271, 0.026462, 0.010793, 0.00132]},
+{id:"c4",n:"Gamma Case",art:"📦",era:0,cost:237275.99999999997,base:39545.99999999999,odds:[0.464109, 0.276398, 0.154939, 0.064233, 0.027565, 0.011353, 0.001402]},
+{id:"c5",n:"Falchion Case",art:"📦",era:0,cost:1850752.7999999998,base:308458.8,odds:[0.456349, 0.277409, 0.157874, 0.066236, 0.028705, 0.011938, 0.001489]},
+{id:"c6",n:"Shadow Case",art:"📦",era:0,cost:14435871.839999998,base:2405978.6399999997,odds:[0.448569, 0.278331, 0.16081, 0.068277, 0.029883, 0.012549, 0.00158]},
+{id:"c7",n:"Revolver Case",art:"📦",era:0,cost:112599800.352,base:18766633.392,odds:[0.440772, 0.279162, 0.163746, 0.070358, 0.031098, 0.013187, 0.001677]},
+{id:"c8",n:"Huntsman Case",art:"📦",era:0,cost:878278442.7455999,base:146379740.45759997,odds:[0.432963, 0.279899, 0.166679, 0.072478, 0.032351, 0.013853, 0.001778]},
+{id:"c9",n:"Breakout Case",art:"📦",era:0,cost:6850571853.415679,base:1141761975.56928,odds:[0.425144, 0.28054, 0.169605, 0.074635, 0.033643, 0.014547, 0.001886]},
+{id:"c10",n:"Vanguard Case",art:"📦",era:0,cost:53434460456.642296,base:8905743409.440382,odds:[0.41732, 0.281085, 0.172522, 0.07683, 0.034974, 0.015271, 0.001999]},
+{id:"c11",n:"Phoenix Case",art:"🎁",era:1,cost:416788791561.8099,base:69464798593.63498,odds:[0.409494, 0.28153, 0.175427, 0.079061, 0.036346, 0.016025, 0.002118]},
+{id:"c12",n:"Winter Offensive Case",art:"🎁",era:1,cost:3250952574182.117,base:541825429030.35284,odds:[0.401671, 0.281875, 0.178316, 0.081327, 0.037757, 0.01681, 0.002243]},
+{id:"c13",n:"Esports Case",art:"🎁",era:1,cost:25357430078620.51,base:4226238346436.752,odds:[0.393854, 0.282118, 0.181188, 0.083629, 0.039209, 0.017628, 0.002375]},
+{id:"c14",n:"Bravo Case",art:"🎁",era:1,cost:197787954613240.0,base:32964659102206.668,odds:[0.386048, 0.282257, 0.184038, 0.085963, 0.040702, 0.018478, 0.002513]},
+{id:"c15",n:"Hydra Case",art:"🎁",era:1,cost:1542746045983272.0,base:257124340997212.0,odds:[0.378256, 0.282292, 0.186864, 0.088331, 0.042236, 0.019362, 0.002659]},
+{id:"c16",n:"Glove Case",art:"🎁",era:1,cost:1.203341915866952e+16,base:2005569859778253.2,odds:[0.370483, 0.282221, 0.189662, 0.090729, 0.043812, 0.020281, 0.002812]},
+{id:"c17",n:"Clutch Case",art:"🎁",era:1,cost:9.386066943762226e+16,base:1.5643444906270376e+16,odds:[0.362732, 0.282044, 0.192429, 0.093158, 0.045429, 0.021235, 0.002973]},
+{id:"c18",n:"Danger Zone Case",art:"🎁",era:1,cost:7.321132216134536e+17,base:1.2201887026890893e+17,odds:[0.355008, 0.281759, 0.195162, 0.095615, 0.047088, 0.022226, 0.003142]},
+{id:"c19",n:"Horizon Case",art:"🎁",era:1,cost:5.710483128584938e+18,base:9.517471880974898e+17,odds:[0.347315, 0.281366, 0.197858, 0.098099, 0.048789, 0.023254, 0.003319]},
+{id:"c20",n:"Prisma II Case",art:"🎁",era:1,cost:4.454176840296251e+19,base:7.423628067160419e+18,odds:[0.339657, 0.280865, 0.200513, 0.100608, 0.050531, 0.02432, 0.003505]},
+{id:"c21",n:"Fracture Case",art:"🗃️",era:2,cost:3.474257935431076e+20,base:5.790429892385126e+19,odds:[0.332038, 0.280255, 0.203125, 0.103141, 0.052315, 0.025425, 0.0037]},
+{id:"c22",n:"Snakebite Case",art:"🗃️",era:2,cost:2.7099211896362395e+21,base:4.516535316060399e+20,odds:[0.324462, 0.279537, 0.205689, 0.105697, 0.054141, 0.02657, 0.003904]},
+{id:"c23",n:"Dreams Case",art:"🗃️",era:2,cost:2.1137385279162667e+22,base:3.522897546527111e+21,odds:[0.316933, 0.278709, 0.208203, 0.108273, 0.056009, 0.027756, 0.004118]},
+{id:"c24",n:"Recoil Case",art:"🗃️",era:2,cost:1.6487160517746877e+23,base:2.7478600862911462e+22,odds:[0.309455, 0.277773, 0.210664, 0.110867, 0.057917, 0.028982, 0.004341]},
+{id:"c25",n:"Revolution Case",art:"🗃️",era:2,cost:1.2859985203842566e+24,base:2.1433308673070944e+23,odds:[0.302032, 0.276729, 0.213068, 0.113478, 0.059867, 0.030251, 0.004575]},
+{id:"c26",n:"Kilowatt Case",art:"🗃️",era:2,cost:1.0030788458997202e+25,base:1.6717980764995335e+24,odds:[0.294667, 0.275577, 0.215412, 0.116103, 0.061857, 0.031563, 0.00482]},
+{id:"c27",n:"Gallery Case",art:"🗃️",era:2,cost:7.824014998017816e+25,base:1.304002499669636e+25,odds:[0.287366, 0.274318, 0.217694, 0.118741, 0.063888, 0.032918, 0.005076]},
+{id:"c28",n:"Fever Case",art:"🗃️",era:2,cost:6.1027316984538966e+26,base:1.017121949742316e+26,odds:[0.280131, 0.272954, 0.21991, 0.121389, 0.065958, 0.034317, 0.005343]},
+{id:"c29",n:"Anubis Case",art:"🗃️",era:2,cost:4.7601307247940393e+27,base:7.933551207990065e+26,odds:[0.272965, 0.271484, 0.222057, 0.124045, 0.068067, 0.035761, 0.005621]},
+{id:"c30",n:"Riptide Case",art:"🗃️",era:2,cost:3.7129019653393504e+28,base:6.18816994223225e+27,odds:[0.265873, 0.269911, 0.224132, 0.126706, 0.070215, 0.03725, 0.005912]},
+{id:"c31",n:"Titanium Case",art:"🧰",era:3,cost:2.8960635329646933e+29,base:4.826772554941155e+28,odds:[0.258858, 0.268236, 0.226133, 0.129372, 0.0724, 0.038785, 0.006216]},
+{id:"c32",n:"Obsidian Case",art:"🧰",era:3,cost:2.2589295557124606e+30,base:3.764882592854101e+29,odds:[0.251923, 0.266461, 0.228057, 0.132038, 0.074622, 0.040367, 0.006532]},
+{id:"c33",n:"Cobalt Case",art:"🧰",era:3,cost:1.7619650534557192e+31,base:2.936608422426199e+30,odds:[0.245072, 0.264586, 0.229901, 0.134703, 0.076881, 0.041995, 0.006861]},
+{id:"c34",n:"Tungsten Case",art:"🧰",era:3,cost:1.374332741695461e+32,base:2.290554569492435e+31,odds:[0.238307, 0.262615, 0.231663, 0.137364, 0.079175, 0.043671, 0.007204]},
+{id:"c35",n:"Iridium Case",art:"🧰",era:3,cost:1.0719795385224595e+33,base:1.786632564204099e+32,odds:[0.231632, 0.260549, 0.233341, 0.140019, 0.081502, 0.045395, 0.007561]},
+{id:"c36",n:"Osmium Case",art:"🧰",era:3,cost:8.361440400475184e+33,base:1.3935734000791974e+33,odds:[0.225049, 0.258391, 0.234932, 0.142666, 0.083863, 0.047167, 0.007932]},
+{id:"c37",n:"Palladium Case",art:"🧰",era:3,cost:6.521923512370644e+34,base:1.086987252061774e+34,odds:[0.218561, 0.256142, 0.236434, 0.145301, 0.086256, 0.048988, 0.008318]},
+{id:"c38",n:"Rhodium Case",art:"🧰",era:3,cost:5.087100339649102e+35,base:8.478500566081836e+34,odds:[0.21217, 0.253806, 0.237845, 0.147922, 0.08868, 0.050857, 0.008719]},
+{id:"c39",n:"Platinum Case",art:"🧰",era:3,cost:3.967938264926299e+36,base:6.613230441543832e+35,odds:[0.205879, 0.251385, 0.239164, 0.150527, 0.091134, 0.052776, 0.009136]},
+{id:"c40",n:"Meteoric Iron Case",art:"🧰",era:3,cost:3.094991846642514e+37,base:5.1583197444041897e+36,odds:[0.19969, 0.248882, 0.240388, 0.153113, 0.093615, 0.054743, 0.009569]},
+{id:"c41",n:"Emerald Case",art:"💼",era:4,cost:2.4140936403811605e+38,base:4.0234894006352677e+37,odds:[0.193606, 0.246299, 0.241516, 0.155678, 0.096124, 0.05676, 0.010017]},
+{id:"c42",n:"Sapphire Case",art:"💼",era:4,cost:1.882993039497305e+39,base:3.1383217324955085e+38,odds:[0.187627, 0.24364, 0.242547, 0.158219, 0.098658, 0.058826, 0.010482]},
+{id:"c43",n:"Ruby Case",art:"💼",era:4,cost:1.4687345708078982e+40,base:2.447890951346497e+39,odds:[0.181756, 0.240908, 0.24348, 0.160733, 0.101216, 0.060942, 0.010965]},
+{id:"c44",n:"Amethyst Case",art:"💼",era:4,cost:1.1456129652301605e+41,base:1.9093549420502676e+40,odds:[0.175995, 0.238106, 0.244313, 0.163218, 0.103797, 0.063108, 0.011464]},
+{id:"c45",n:"Onyx Case",art:"💼",era:4,cost:8.935781128795252e+41,base:1.4892968547992086e+41,odds:[0.170344, 0.235238, 0.245045, 0.165672, 0.106398, 0.065322, 0.011982]},
+{id:"c46",n:"Opal Case",art:"💼",era:4,cost:6.969909280460296e+42,base:1.1616515467433827e+42,odds:[0.164805, 0.232306, 0.245676, 0.168091, 0.109019, 0.067586, 0.012517]},
+{id:"c47",n:"Topaz Case",art:"💼",era:4,cost:5.43652923875903e+43,base:9.060882064598383e+42,odds:[0.159379, 0.229314, 0.246205, 0.170475, 0.111657, 0.069899, 0.013071]},
+{id:"c48",n:"Garnet Case",art:"💼",era:4,cost:4.240492806232044e+44,base:7.06748801038674e+43,odds:[0.154068, 0.226266, 0.246632, 0.17282, 0.114311, 0.072261, 0.013643]},
+{id:"c49",n:"Diamond Case",art:"💼",era:4,cost:3.307584388860994e+45,base:5.512640648101657e+44,odds:[0.148871, 0.223164, 0.246956, 0.175123, 0.11698, 0.074671, 0.014235]},
+{id:"c50",n:"Star Sapphire Case",art:"💼",era:4,cost:2.579915823311575e+46,base:4.299859705519292e+45,odds:[0.143789, 0.220014, 0.247177, 0.177384, 0.119661, 0.07713, 0.014846]},
+{id:"c51",n:"Quantum Case",art:"🗳️",era:5,cost:2.0123343421830286e+47,base:3.353890570305048e+46,odds:[0.138823, 0.216818, 0.247296, 0.179598, 0.122352, 0.079636, 0.015477]},
+{id:"c52",n:"Photon Case",art:"🗳️",era:5,cost:1.5696207869027622e+48,base:2.616034644837937e+47,odds:[0.133973, 0.21358, 0.247312, 0.181765, 0.125052, 0.08219, 0.016128]},
+{id:"c53",n:"Graviton Case",art:"🗳️",era:5,cost:1.2243042137841547e+49,base:2.040507022973591e+48,odds:[0.129239, 0.210303, 0.247226, 0.183883, 0.127759, 0.084791, 0.0168]},
+{id:"c54",n:"Neutrino Case",art:"🗳️",era:5,cost:9.549572867516406e+49,base:1.591595477919401e+49,odds:[0.124621, 0.206991, 0.247039, 0.185948, 0.13047, 0.087438, 0.017492]},
+{id:"c55",n:"Tachyon Case",art:"🗳️",era:5,cost:7.448666836662797e+50,base:1.2414444727771328e+50,odds:[0.120119, 0.203649, 0.246751, 0.18796, 0.133185, 0.09013, 0.018206]},
+{id:"c56",n:"Boson Case",art:"🗳️",era:5,cost:5.809960132596981e+51,base:9.683266887661635e+50,odds:[0.115733, 0.200278, 0.246363, 0.189917, 0.135901, 0.092868, 0.01894]},
+{id:"c57",n:"Lepton Case",art:"🗳️",era:5,cost:4.531768903425645e+52,base:7.552948172376075e+51,odds:[0.111461, 0.196884, 0.245875, 0.191816, 0.138616, 0.09565, 0.019697]},
+{id:"c58",n:"Quark Case",art:"🗳️",era:5,cost:3.534779744672003e+53,base:5.891299574453339e+52,odds:[0.107304, 0.19347, 0.24529, 0.193656, 0.141329, 0.098476, 0.020475]},
+{id:"c59",n:"Gluon Case",art:"🗳️",era:5,cost:2.7571282008441622e+54,base:4.595213668073603e+53,odds:[0.103261, 0.190038, 0.244609, 0.195435, 0.144037, 0.101345, 0.021276]},
+{id:"c60",n:"Higgs Case",art:"🗳️",era:5,cost:2.1505599966584464e+55,base:3.584266661097411e+54,odds:[0.09933, 0.186593, 0.243832, 0.197152, 0.146738, 0.104256, 0.022099]},
+{id:"c61",n:"Nebula Case",art:"📮",era:6,cost:1.6774367973935883e+56,base:2.7957279956559803e+55,odds:[0.095511, 0.183138, 0.242961, 0.198805, 0.149431, 0.107208, 0.022945]},
+{id:"c62",n:"Pulsar Case",art:"📮",era:6,cost:1.3084007019669989e+57,base:2.180667836611665e+56,odds:[0.091803, 0.179676, 0.241999, 0.200394, 0.152113, 0.110201, 0.023814]},
+{id:"c63",n:"Quasar Case",art:"📮",era:6,cost:1.020552547534259e+58,base:1.7009209125570984e+57,odds:[0.088205, 0.176211, 0.240946, 0.201916, 0.154783, 0.113232, 0.024706]},
+{id:"c64",n:"Magnetar Case",art:"📮",era:6,cost:7.96030987076722e+58,base:1.3267183117945366e+58,odds:[0.084714, 0.172746, 0.239805, 0.203372, 0.157439, 0.116302, 0.025622]},
+{id:"c65",n:"Supernova Case",art:"📮",era:6,cost:6.209041699198432e+59,base:1.0348402831997386e+59,odds:[0.081331, 0.169283, 0.238577, 0.204758, 0.160079, 0.119409, 0.026562]},
+{id:"c66",n:"Neutron Star Case",art:"📮",era:6,cost:4.843052525374777e+60,base:8.071754208957961e+59,odds:[0.078053, 0.165827, 0.237265, 0.206076, 0.162701, 0.122553, 0.027525]},
+{id:"c67",n:"White Dwarf Case",art:"📮",era:6,cost:3.7775809697923257e+61,base:6.2959682829872095e+60,odds:[0.074878, 0.16238, 0.235871, 0.207323, 0.165304, 0.125731, 0.028512]},
+{id:"c68",n:"Red Giant Case",art:"📮",era:6,cost:2.9465131564380136e+62,base:4.9108552607300225e+61,odds:[0.071806, 0.158945, 0.234397, 0.2085, 0.167884, 0.128944, 0.029524]},
+{id:"c69",n:"Protostar Case",art:"📮",era:6,cost:2.298280262021651e+63,base:3.830467103369418e+62,odds:[0.068834, 0.155524, 0.232845, 0.209605, 0.170442, 0.132189, 0.030561]},
+{id:"c70",n:"Hypernova Case",art:"📮",era:6,cost:1.7926586043768875e+64,base:2.9877643406281458e+63,odds:[0.065961, 0.152121, 0.231218, 0.210638, 0.172975, 0.135466, 0.031622]},
+{id:"c71",n:"Singularity Case",art:"🧳",era:7,cost:1.3982737114139724e+65,base:2.330456185689954e+64,odds:[0.063184, 0.148737, 0.229518, 0.211599, 0.175481, 0.138773, 0.032708]},
+{id:"c72",n:"Event Horizon Case",art:"🧳",era:7,cost:1.0906534949028983e+66,base:1.8177558248381639e+65,odds:[0.060503, 0.145377, 0.227748, 0.212487, 0.177958, 0.142109, 0.033818]},
+{id:"c73",n:"Accretion Case",art:"🧳",era:7,cost:8.507097260242607e+66,base:1.4178495433737678e+66,odds:[0.057914, 0.142041, 0.225911, 0.213301, 0.180406, 0.145473, 0.034954]},
+{id:"c74",n:"Ergosphere Case",art:"🧳",era:7,cost:6.635535862989233e+67,base:1.1059226438315387e+67,odds:[0.055416, 0.138731, 0.224008, 0.214043, 0.182822, 0.148864, 0.036116]},
+{id:"c75",n:"Hawking Case",art:"🧳",era:7,cost:5.175717973131602e+68,base:8.626196621886004e+67,odds:[0.053007, 0.135452, 0.222043, 0.214711, 0.185205, 0.15228, 0.037302]},
+{id:"c76",n:"Kerr Case",art:"🧳",era:7,cost:4.037060019042649e+69,base:6.728433365071081e+68,odds:[0.050686, 0.132203, 0.220018, 0.215306, 0.187553, 0.15572, 0.038515]},
+{id:"c77",n:"Schwarzschild Case",art:"🧳",era:7,cost:3.148906814853267e+70,base:5.248178024755445e+69,odds:[0.048449, 0.128988, 0.217936, 0.215828, 0.189865, 0.159182, 0.039753]},
+{id:"c78",n:"Wormhole Case",art:"🧳",era:7,cost:2.4561473155855478e+71,base:4.093578859309246e+70,odds:[0.046295, 0.125808, 0.215799, 0.216277, 0.19214, 0.162666, 0.041016]},
+{id:"c79",n:"White Hole Case",art:"🧳",era:7,cost:1.915794906156727e+72,base:3.1929915102612117e+71,odds:[0.044222, 0.122664, 0.213611, 0.216653, 0.194376, 0.166169, 0.042305]},
+{id:"c80",n:"Naked Singularity Case",art:"🧳",era:7,cost:1.494320026802247e+73,base:2.490533378003745e+72,odds:[0.042227, 0.119559, 0.211374, 0.216957, 0.196572, 0.16969, 0.043621]},
+{id:"c81",n:"Galactic Case",art:"🎒",era:8,cost:1.1655696209057528e+74,base:1.9426160348429213e+73,odds:[0.040309, 0.116493, 0.209091, 0.217189, 0.198727, 0.173229, 0.044962]},
+{id:"c82",n:"Andromeda Case",art:"🎒",era:8,cost:9.091443043064872e+74,base:1.5152405071774786e+74,odds:[0.038465, 0.113469, 0.206765, 0.217349, 0.200839, 0.176783, 0.046329]},
+{id:"c83",n:"Magellanic Case",art:"🎒",era:8,cost:7.0913255735906e+75,base:1.1818875955984333e+75,odds:[0.036694, 0.110488, 0.204398, 0.217439, 0.202908, 0.180352, 0.047722]},
+{id:"c84",n:"Triangulum Case",art:"🎒",era:8,cost:5.531233947400668e+76,base:9.21872324566778e+75,odds:[0.034993, 0.10755, 0.201993, 0.217459, 0.204931, 0.183933, 0.049141]},
+{id:"c85",n:"Sombrero Case",art:"🎒",era:8,cost:4.314362478972521e+77,base:7.190604131620868e+76,odds:[0.03336, 0.104657, 0.199552, 0.21741, 0.206909, 0.187525, 0.050587]},
+{id:"c86",n:"Whirlpool Case",art:"🎒",era:8,cost:3.3652027335985662e+78,base:5.608671222664277e+77,odds:[0.031794, 0.101809, 0.197079, 0.217292, 0.208841, 0.191128, 0.052058]},
+{id:"c87",n:"Pinwheel Case",art:"🎒",era:8,cost:2.6248581322068813e+79,base:4.374763553678135e+78,odds:[0.030291, 0.099008, 0.194576, 0.217107, 0.210724, 0.194738, 0.053555]},
+{id:"c88",n:"Cartwheel Case",art:"🎒",era:8,cost:2.0473893431213674e+80,base:3.4123155718689456e+79,odds:[0.028851, 0.096255, 0.192045, 0.216854, 0.212559, 0.198356, 0.055079]},
+{id:"c89",n:"Great Attractor Case",art:"🎒",era:8,cost:1.5969636876346668e+81,base:2.661606146057778e+80,odds:[0.027471, 0.093549, 0.18949, 0.216537, 0.214345, 0.20198, 0.056629]},
+{id:"c90",n:"Laniakea Case",art:"🎒",era:8,cost:1.24563167635504e+82,base:2.0760527939250665e+81,odds:[0.026149, 0.090893, 0.186912, 0.216154, 0.216081, 0.205608, 0.058204]},
+{id:"c91",n:"Multiverse Case",art:"🛍️",era:9,cost:9.715927075569311e+82,base:1.6193211792615518e+82,odds:[0.024883, 0.088285, 0.184315, 0.215708, 0.217766, 0.209238, 0.059806]},
+{id:"c92",n:"Timeline Case",art:"🛍️",era:9,cost:7.578423118944062e+83,base:1.2630705198240104e+83,odds:[0.023671, 0.085727, 0.1817, 0.215199, 0.219399, 0.21287, 0.061434]},
+{id:"c93",n:"Paradox Case",art:"🛍️",era:9,cost:5.911170032776368e+84,base:9.85195005462728e+83,odds:[0.022512, 0.083219, 0.17907, 0.214629, 0.22098, 0.216503, 0.063087]},
+{id:"c94",n:"Axiom Case",art:"🛍️",era:9,cost:4.610712625565567e+85,base:7.684521042609278e+84,odds:[0.021403, 0.080761, 0.176427, 0.214, 0.222509, 0.220133, 0.064767]},
+{id:"c95",n:"Infinity Case",art:"🛍️",era:9,cost:3.5963558479411425e+86,base:5.9939264132352374e+85,odds:[0.020344, 0.078353, 0.173774, 0.213311, 0.223984, 0.223761, 0.066472]},
+{id:"c96",n:"Omega Case",art:"🛍️",era:9,cost:2.8051575613940914e+87,base:4.6752626023234856e+86,odds:[0.019331, 0.075996, 0.171113, 0.212565, 0.225406, 0.227385, 0.068203]},
+{id:"c97",n:"Genesis Case",art:"🛍️",era:9,cost:2.188022897887391e+88,base:3.6467048298123186e+87,odds:[0.018364, 0.073689, 0.168446, 0.211762, 0.226775, 0.231004, 0.06996]},
+{id:"c98",n:"Architect Case",art:"🛍️",era:9,cost:1.706657860352165e+89,base:2.8444297672536083e+88,odds:[0.01744, 0.071433, 0.165775, 0.210905, 0.228089, 0.234616, 0.071743]},
+{id:"c99",n:"Prime Case",art:"🛍️",era:9,cost:1.3311931310746886e+90,base:2.2186552184578144e+89,odds:[0.016558, 0.069227, 0.163102, 0.209995, 0.229348, 0.23822, 0.07355]},
+{id:"c100",n:"Black Market Case",art:"🛍️",era:9,cost:1.038330642238257e+91,base:1.730551070397095e+90,odds:[0.015717, 0.067071, 0.160429, 0.209032, 0.230553, 0.241814, 0.075384]},
+];
+const ERAS=["Starting Out", "Going Wide", "Networked", "Hardware", "Artificial", "Quantum", "Fundamental", "Stellar", "Galactic", "Omniversal"];
+const CASE_ERAS=["Standard", "Operation", "Modern", "Metals", "Gemstone", "Particle", "Stellar", "Gravitational", "Galactic", "Beyond"];
+const CLICK_MULT=[
+  {id:"cm1",n:"Double Click",  ico:"✌️", d:"x1.6 click power",   base:5e3,  g:2.9,  max:45},
+  {id:"cm2",n:"Crit Chance",   ico:"🎲", d:"+3% crit chance",    base:1500, g:1.65, max:31},
+  {id:"cm3",n:"Crit Damage",   ico:"💢", d:"+1.5x crit payout",  base:9e3,  g:1.8,  max:80}
+];
+const BOT_UPG=[
+  {id:"bu1",n:"Overclock",      ico:"⚡", d:"x1.5 all bot income", base:25e3, g:3.6, max:45},
+  {id:"bu2",n:"Proxy Farm",     ico:"🌐", d:"x1.35 all bot income",base:4e5,  g:4.1, max:40},
+  {id:"bu3",n:"Idle Mastery",   ico:"🧘", d:"+8% bot income",      base:60e3, g:1.55,max:150}
+];
+const ACHS=[
+  {id:"a1", i:"👆", n:"First Blood",      d:"Click once",                       t:s=>s.clicks>=1,        b:0},
+  {id:"a2", i:"🔥", n:"Trigger Finger",   d:"1,000 clicks",                     t:s=>s.clicks>=1e3,      b:.02},
+  {id:"a3", i:"💪", n:"Carpal Tunnel",    d:"25,000 clicks",                    t:s=>s.clicks>=25e3,     b:.05},
+  {id:"a4", i:"🦾", n:"Inhuman",          d:"500,000 clicks",                   t:s=>s.clicks>=5e5,      b:.09},
+  {id:"a5", i:"📦", n:"Unboxer",          d:"Open 10 cases",                    t:s=>s.opened>=10,       b:.02},
+  {id:"a6", i:"🎰", n:"Case Addict",      d:"Open 250 cases",                   t:s=>s.opened>=250,      b:.06},
+  {id:"a7", i:"🃏", n:"Whale",            d:"Open 2,000 cases",                 t:s=>s.opened>=2e3,      b:.12},
+  {id:"a8", i:"🏬", n:"Market Maker",     d:"Open 25,000 cases",                t:s=>s.opened>=25e3,     b:.22},
+  {id:"a9", i:"🔪", n:"Knife Drop",       d:"Unbox an Exceedingly Rare item",   t:s=>s.gotRare>=1,       b:.08},
+  {id:"a10",i:"👑", n:"Butterfly Effect", d:"Unbox 10 rare specials",           t:s=>s.gotRare>=10,      b:.20},
+  {id:"a11",i:"🗡️", n:"Knife Collector",  d:"Unbox 100 rare specials",          t:s=>s.gotRare>=100,     b:.35},
+  {id:"a12",i:"🤖", n:"Automated",        d:"Own 25 bots",                      t:s=>s.botCount>=25,     b:.04},
+  {id:"a13",i:"🏭", n:"Bot Farm",         d:"Own 250 bots",                     t:s=>s.botCount>=250,    b:.10},
+  {id:"a14",i:"🌐", n:"Infrastructure",   d:"Own 2,500 bots",                   t:s=>s.botCount>=2500,   b:.20},
+  {id:"a15",i:"🔓", n:"Diversified",      d:"Own at least one of 25 bot types", t:s=>s.botTypes>=25,     b:.08},
+  {id:"a16",i:"🗂️", n:"Full Roster",      d:"Own at least one of 60 bot types", t:s=>s.botTypes>=60,     b:.18},
+  {id:"a17",i:"🎖️", n:"Completionist",    d:"Own all 100 bot types",            t:s=>s.botTypes>=100,    b:.50},
+  {id:"a18",i:"🗃️", n:"Case Tourist",     d:"Open 25 different cases",          t:s=>s.caseTypes>=25,    b:.08},
+  {id:"a19",i:"🏆", n:"Every Crate",      d:"Open all 100 case types",          t:s=>s.caseTypes>=100,   b:.50},
+  {id:"a20",i:"💰", n:"Millionaire",      d:"Earn 1,000,000 lifetime",          t:s=>s.lifetime>=1e6,    b:.03},
+  {id:"a21",i:"💎", n:"Billionaire",      d:"Earn 1,000,000,000 lifetime",      t:s=>s.lifetime>=1e9,    b:.07},
+  {id:"a22",i:"🏦", n:"Trillionaire",     d:"Earn 1 trillion lifetime",         t:s=>s.lifetime>=1e12,   b:.15},
+  {id:"a23",i:"🌠", n:"Astronomical",     d:"Earn 1e24 lifetime",               t:s=>s.lifetime>=1e24,   b:.25},
+  {id:"a24",i:"♾️", n:"Beyond Counting",  d:"Earn 1e48 lifetime",               t:s=>s.lifetime>=1e48,   b:.45},
+  {id:"a25",i:"🎒", n:"Collector",        d:"Hold 50 skins at once",            t:s=>s.invLen>=50,       b:.05},
+  {id:"a26",i:"🧳", n:"Hoarder",          d:"Hold 500 skins at once",           t:s=>s.invLen>=500,      b:.15},
+  {id:"a27",i:"◈",  n:"Trade Up",         d:"Prestige once",                    t:s=>s.prestiges>=1,     b:.10},
+  {id:"a28",i:"🌟", n:"Veteran",          d:"Prestige 5 times",                 t:s=>s.prestiges>=5,     b:.30},
+  {id:"a29",i:"🪐", n:"Reborn",           d:"Prestige 25 times",                t:s=>s.prestiges>=25,    b:.60},
+  {id:"a30",i:"🧿", n:"Gem Hoarder",      d:"Hold 1,000 gems",                  t:s=>s.gems>=1000,       b:.40}
+];
+
+/* ============ state ============ */
+const fresh=()=>({
+  cred:0, lifetime:0, clicks:0, crits:0, opened:0, gotRare:0, spent:0, sold:0,
+  gems:0, prestiges:0, playTime:0,
+  up:{}, mult:{}, bots:{}, botUp:{}, inv:[], ach:{}, caseStats:{},
+  saveTime:Date.now()
+});
+let S=fresh();
+let ticking=true;
+
+/* ============ derived ============ */
+/* Derived values are recomputed only when something that feeds them changes.
+   Without this, a 300 CPS autoclicker re-walks the whole inventory 300x a second. */
+let _dirty=true, _cache={ach:0,sb:{cl:0,id:0},gm:1,click:1,cps:0};
+function invalidate(){ _dirty=true; }
+function recalc(){
+  let ab=0; for(const a of ACHS) if(S.ach[a.id]) ab+=a.b;
+  let sb=0; for(const s of S.inv) sb+=RARITY[s.r].m*0.0009;
+  const gm=(1+S.gems*0.05)*Math.pow(1.015,S.gems)*(1+ab);
+  let flat=1; for(const u of CLICK_UPG) flat+=u.add*(S.up[u.id]||0);
+  const click=flat*Math.pow(1.6,S.mult.cm1||0)*gm*(1+sb);
+  let raw=0; for(const b of BOTS) raw+=(S.bots[b.id]||0)*b.cps;
+  raw*=Math.pow(1.5,S.botUp.bu1||0)*Math.pow(1.35,S.botUp.bu2||0)*(1+(S.botUp.bu3||0)*0.08);
+  _cache={ach:ab, sb:{cl:sb,id:sb}, gm:gm, click:click, cps:raw*gm*(1+sb)};
+  _dirty=false;
+}
+function D(){ if(_dirty)recalc(); return _cache; }
+function achBonus(){ return D().ach; }
+function skinBonus(){ return D().sb; }
+function globalMult(){ return D().gm; }
+function clickPower(){ return D().click; }
+function critChance(){ return Math.min(.95,(S.mult.cm2||0)*0.03); }
+function critMult(){ return 2+(S.mult.cm3||0)*1.5; }
+function cps(){ return D().cps; }
+function botCount(){let c=0;for(const b of BOTS)c+=(S.bots[b.id]||0);return c;}
+function costOf(base,g,lvl){ return Math.ceil(base*Math.pow(g,lvl)); }
+function gemsEarnedTotal(){
+  // Logarithmic: every 10x of lifetime earnings is worth a fixed 15 gems.
+  // A power curve would hand out billions of gems once the economy reaches 1e88.
+  if(!(S.lifetime>1e11))return 0;
+  return Math.max(0,Math.floor(15*(Math.log10(S.lifetime)-11)));
+}
+function prestigeGain(){
+  // Lifetime earnings are never reset, so pay out only the gems this run ADDED.
+  // Without the subtraction you could prestige twice in a row and be paid twice
+  // for the same earnings.
+  return Math.max(0, gemsEarnedTotal()-S.gems);
+}
+
+/* ============ earn ============ */
+function earn(n){ S.cred+=n; S.lifetime+=n; }
+function spend(n){ if(S.cred<n)return false; S.cred-=n; S.spent+=n; return true; }
+
+/* ============ clicking ============ */
+/* --- click hot path ---------------------------------------------------------
+   Must stay cheap enough for a 300+ CPS autoclicker. Three rules:
+   1. no layout reads (getBoundingClientRect forces a synchronous reflow),
+   2. a hard cap on floating numbers, recycled from a pool instead of
+      allocating a div + a setTimeout per click,
+   3. no DOM writes here at all - the rAF loop repaints on its own schedule. */
+const MAX_FLOATS=18;
+let _floats=[], _fi=0, _wrapBox={x:0,y:0,w:600,h:600};
+function measureWrap(){
+  const r=$("#clickWrap").getBoundingClientRect();
+  _wrapBox={x:r.left,y:r.top,w:r.width,h:r.height};
+}
+window.addEventListener("resize",measureWrap);
+
+function showFloat(x,y,txt,crit){
+  let f=_floats[_fi];
+  if(!f){ f=document.createElement("div"); $("#clickWrap").appendChild(f); _floats[_fi]=f; }
+  _fi=(_fi+1)%MAX_FLOATS;
+  f.className="float"; void f.offsetWidth;          // restart the CSS animation
+  f.className="float"+(crit?" crit":"");
+  f.textContent=txt;
+  f.style.left=x+"px"; f.style.top=y+"px";
+  f.style.setProperty("--dx", rnd(-34,34)+"px");
+}
+
+let _clickBudget=0, _lastFloat=0;
+function doClick(ev){
+  S.clicks++;
+  let v=D().click, crit=false;
+  if(critChance()>0 && Math.random()<critChance()){ v*=critMult(); crit=true; S.crits++; }
+  S.cred+=v; S.lifetime+=v;
+
+  // Draw at most ~35 floats a second no matter how fast the clicks arrive.
+  const now=performance.now();
+  if(now-_lastFloat>28){
+    _lastFloat=now;
+    let x,y;
+    if(ev&&ev.clientX){ x=ev.clientX-_wrapBox.x; y=ev.clientY-_wrapBox.y; }
+    else { x=_wrapBox.w/2+rnd(-40,40); y=_wrapBox.h/2; }
+    showFloat(x,y,(crit?"CRIT ":"+")+fmt(v),crit);
+  }
+  _clickBudget++;
+}
+$("#crate").addEventListener("pointerdown",doClick);
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&$("#p-click").classList.contains("on")&&!$("#rouletteOv").classList.contains("on")){
+    e.preventDefault(); doClick();
+  }
+});
+
+/* ============ skins ============ */
+function rollRarity(odds){
+  let r=Math.random(), acc=0;
+  for(let i=0;i<odds.length;i++){ acc+=odds[i]; if(r<acc)return i; }
+  return 0;
+}
+function makeSkin(c){
+  const r=rollRarity(c.odds);
+  const rare=r===6;
+  const gun=rare?pick(KNIVES):pick(GUNS);
+  const paint=pick(PAINTS);
+  const w=rare?WEARS[Math.floor(rnd(0,3))]:pick(WEARS);
+  const stat=!rare&&Math.random()<0.10;
+  let val=c.base*RARITY[r].m*w.m*rnd(.75,1.45);
+  if(stat)val*=2;
+  return {r, n:gun+" | "+paint, w:w.n, v:Math.ceil(val), st:stat, g:rare?pick(["🔪","🧤"]):pick(GEM), case:c.id};
+}
+
+/* ============ roulette ============ */
+let pendingSkin=null, pendingCase=null, spinning=false;
+function openCase(c){
+  if(spinning)return;
+  if(!spend(c.cost)){ toast("Not enough credits for "+c.n); return; }
+  S.opened++; S.caseStats[c.id]=(S.caseStats[c.id]||0)+1;
+  const win=makeSkin(c);
+  if(win.r===6)S.gotRare++;
+  pendingSkin=win; pendingCase=c; spinning=true;
+
+  const strip=$("#strip"); strip.innerHTML="";
+  const W=130, N=60, winIdx=52;
+  for(let i=0;i<N;i++){
+    const s=(i===winIdx)?win:makeSkin(c);
+    const d=document.createElement("div");
+    d.className="ritem"; d.style.setProperty("--rc",RARITY[s.r].c);
+    d.innerHTML='<div class="g">'+s.g+'</div><div class="n" style="color:'+RARITY[s.r].c+'">'+s.n.split(" | ")[1]+'</div>';
+    strip.appendChild(d);
+  }
+  const box=$("#rouletteBox").clientWidth||860;
+  strip.style.transition="none";
+  strip.style.transform="translateX(0px)";
+  $("#rouletteOv").classList.add("on");
+  $("#resultCard").classList.remove("on");
+  $("#rouletteTitle").textContent="Unlocking "+c.n+"…";
+  const target=-(winIdx*W + W/2 - box/2 + rnd(-38,38));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    strip.style.transition="transform 5.2s cubic-bezier(.08,.72,.16,1)";
+    strip.style.transform="translateX("+target+"px)";
+  }));
+  setTimeout(showResult,5350);
+}
+function showResult(){
+  save();  // a case opening is expensive - never let it be the thing you lose
+  const s=pendingSkin, R=RARITY[s.r], card=$("#resultCard");
+  card.style.setProperty("--rc",R.c);
+  card.querySelector(".g").textContent=s.g;
+  card.querySelector(".nm").innerHTML='<span style="color:'+R.c+'">'+(s.st?'<span style="color:#ff9b26">StatTrak™ </span>':'')+s.n+'</span>';
+  card.querySelector(".wr").textContent=R.n+" · "+s.w;
+  card.querySelector(".vl").textContent=fmt(s.v)+" credits";
+  card.classList.add("on");
+  $("#rouletteTitle").textContent=s.r>=5?"◈ RARE SPECIAL ITEM ◈":"Unboxed";
+  spinning=false;
+  if(s.r>=5)toast((s.r===6?"★ ":"")+"You unboxed "+s.n+"!");
+  checkAch(); paintAll();
+}
+$("#rKeep").onclick=()=>{ S.inv.push(pendingSkin); invalidate(); closeRoulette(); toast("Added to inventory"); };
+$("#rSell").onclick=()=>{ earn(pendingSkin.v); S.sold+=pendingSkin.v; closeRoulette(); toast("Sold for "+fmt(pendingSkin.v)); };
+$("#rAgain").onclick=()=>{ S.inv.push(pendingSkin); invalidate(); const c=pendingCase; closeRoulette(); openCase(c); };
+function closeRoulette(){ $("#rouletteOv").classList.remove("on"); $("#resultCard").classList.remove("on"); paintAll(); }
+$("#rouletteOv").addEventListener("click",e=>{ if(e.target.id==="rouletteOv"&&!spinning)$("#rKeep").click(); });
+
+/* ============ buying ============ */
+function buy(kind,id){
+  let def,lvl,cost;
+  if(kind==="up"){ def=CLICK_UPG.find(x=>x.id===id); lvl=S.up[id]||0; cost=costOf(def.base,def.g,lvl); }
+  if(kind==="mult"){ def=CLICK_MULT.find(x=>x.id===id); lvl=S.mult[id]||0; if(lvl>=def.max)return; cost=costOf(def.base,def.g,lvl); }
+  if(kind==="bot"){ def=BOTS.find(x=>x.id===id); lvl=S.bots[id]||0; cost=costOf(def.base,1.15,lvl); }
+  if(kind==="botUp"){ def=BOT_UPG.find(x=>x.id===id); lvl=S.botUp[id]||0; if(lvl>=def.max)return; cost=costOf(def.base,def.g,lvl); }
+  if(!spend(cost))return;
+  if(kind==="up")S.up[id]=lvl+1;
+  if(kind==="mult")S.mult[id]=lvl+1;
+  if(kind==="bot")S.bots[id]=lvl+1;
+  if(kind==="botUp")S.botUp[id]=lvl+1;
+  invalidate(); checkAch(); paintAll();
+}
+
+/* ============ rendering ============ */
+function card(kind,def,lvl,cost,sub,maxed){
+  return {kind:kind,id:def.id,ico:def.ico,n:def.n,d:def.d,lvl:lvl,cost:cost,sub:sub,maxed:maxed};
+}
+/* Renders cards once, then updates them in place so hovering/rapid-clicking never
+   loses the element under the cursor. Only rebuilds if the card list itself changes. */
+function renderGrid(sel,items){
+  const el=$(sel); if(!el)return;
+  const key=items.map(i=>i.divider?("#"+i.divider):i.id).join(",");
+  if(el.dataset.key!==key){
+    el.dataset.key=key;
+    el.innerHTML=items.map(i=> i.divider
+      ? '<div class="divider">'+i.divider+' <em>'+(i.sub||"")+'</em></div>'
+      : '<div class="card" data-k="'+i.kind+'" data-id="'+i.id+'">'+
+      '<div class="ico">'+i.ico+'</div><div class="body">'+
+      '<h3><span>'+i.n+'</span><em></em></h3><p class="d">'+i.d+'</p><p class="sub" style="color:#8fa"></p></div>'+
+      '<div class="cost"></div></div>').join("");
+  }
+  const kids=el.children;
+  for(let x=0;x<items.length;x++){
+    const i=items[x], c=kids[x]; if(!c||i.divider)continue;
+    const ok=!i.maxed&&S.cred>=i.cost;
+    c.classList.toggle("afford",ok);
+    c.classList.toggle("locked",!ok);
+    const em=c.querySelector("em"), sub=c.querySelector(".sub"), co=c.querySelector(".cost"), d=c.querySelector(".d");
+    const lv=i.maxed?"MAX":"LV "+i.lvl;
+    if(em.textContent!==lv)em.textContent=lv;
+    if(sub.textContent!==i.sub)sub.textContent=i.sub;
+    if(d.innerHTML!==i.d)d.innerHTML=i.d;
+    const cs=i.maxed?"\u2014":fmt(i.cost);
+    if(co.textContent!==cs)co.textContent=cs;
+  }
+}
+function paintTop(){
+  $("#tCred").textContent=fmt(S.cred);
+  $("#bigCred").textContent=fmt(S.cred);
+  $("#tCps").textContent=fmt(cps())+"/s";
+  $("#tClick").textContent=fmt(clickPower());
+  $("#tGems").textContent=fmt(S.gems);
+  $("#tMult").textContent="x"+fmt(globalMult());
+  $("#cps").textContent="+"+fmt(cps())+"/s from bots"+(critChance()>0?"  ·  "+(critChance()*100).toFixed(0)+"% crit ("+critMult().toFixed(1)+"x)":"");
+  $("#invCount").textContent=S.inv.length;
+}
+/* With 100 entries per tab, showing everything at once is unusable. "Relevant"
+   keeps what you own, what you can afford, and a short preview of what's next. */
+const FILTERS={upg:"relevant", bots:"relevant", cases:"relevant"};
+const PREVIEW=6;
+function applyFilter(items,mode,ownedOf){
+  if(mode==="all")return items;
+  if(mode==="owned")return items.filter(i=>ownedOf(i)>0);
+  const out=[]; let preview=0;
+  for(const i of items){
+    const owned=ownedOf(i)>0, afford=S.cred>=i._cost && !i.maxed;
+    if(owned||afford){ out.push(i); }
+    else if(preview<PREVIEW){ out.push(i); preview++; }
+  }
+  return out;
+}
+function withDividers(items,eraNames,eraOf){
+  const out=[]; let last=-1;
+  for(const i of items){
+    const e=eraOf(i);
+    if(e!==last){ last=e; out.push({divider:eraNames[e]||("Tier "+(e+1)), sub:"tier "+(e+1)+" of "+eraNames.length}); }
+    out.push(i);
+  }
+  return out;
+}
+function filterBar(pane,total,shown){
+  const f=FILTERS[pane];
+  return '<div class="filters" data-pane="'+pane+'">'+
+    '<span class="lbl">Show</span>'+
+    '<button data-f="relevant" class="'+(f==="relevant"?"on":"")+'">Relevant</button>'+
+    '<button data-f="owned" class="'+(f==="owned"?"on":"")+'">Owned</button>'+
+    '<button data-f="all" class="'+(f==="all"?"on":"")+'">All '+total+'</button>'+
+    '<span class="count">showing '+shown+' of '+total+'</span></div>';
+}
+
+function paintUpg(){
+  const all=CLICK_UPG.map(u=>{
+    const l=S.up[u.id]||0, c=costOf(u.base,u.g,l);
+    const it=card("up",u,l,c,l?"currently +"+fmt(u.add*l):"",false);
+    it._cost=c; it.era=u.era; return it;
+  });
+  const shown=applyFilter(all,FILTERS.upg,i=>S.up[i.id]||0);
+  $("#upgBar").innerHTML=filterBar("upg",all.length,shown.length);
+  renderGrid("#upgGrid",withDividers(shown,ERAS,i=>i.era));
+
+  const h2=[];
+  for(const u of CLICK_MULT){
+    const l=S.mult[u.id]||0, mx=l>=u.max;
+    let sub="";
+    if(u.id==="cm1")sub="currently x"+fmt(Math.pow(1.6,l));
+    if(u.id==="cm2")sub="currently "+Math.min(95,l*3)+"% chance";
+    if(u.id==="cm3")sub="currently "+(2+l*1.5).toFixed(1)+"x";
+    h2.push(card("mult",u,l,costOf(u.base,u.g,l),sub,mx));
+  }
+  renderGrid("#multGrid",h2);
+}
+function paintBots(){
+  const mult=Math.pow(1.5,S.botUp.bu1||0)*Math.pow(1.35,S.botUp.bu2||0)*(1+(S.botUp.bu3||0)*.08)
+             *globalMult()*(1+skinBonus().id);
+  const all=BOTS.map(b=>{
+    const l=S.bots[b.id]||0, c=costOf(b.base,1.15,l), each=b.cps*mult;
+    const it=card("bot",{id:b.id,n:b.n,ico:b.ico,d:"+"+fmt(each)+" credits/sec each"},l,c,
+      l?"you own "+l+" — producing "+fmt(each*l)+"/s":"",false);
+    it._cost=c; it.era=b.era; return it;
+  });
+  const shown=applyFilter(all,FILTERS.bots,i=>S.bots[i.id]||0);
+  $("#botBar").innerHTML=filterBar("bots",all.length,shown.length);
+  renderGrid("#botGrid",withDividers(shown,ERAS,i=>i.era));
+
+  const h2=[];
+  for(const u of BOT_UPG){
+    const l=S.botUp[u.id]||0, mx=l>=u.max;
+    h2.push(card("botUp",u,l,costOf(u.base,u.g,l),l?"level "+l+" of "+u.max:"",mx));
+  }
+  renderGrid("#botUpgGrid",h2);
+}
+function paintCases(){
+  const all=CASES.map(c=>{
+    const o=(c.odds[5]+c.odds[6])*100;
+    return {id:c.id,n:c.n,art:c.art,era:c.era,cost:c.cost,_cost:c.cost,
+            rare:o,opened:S.caseStats[c.id]||0};
+  });
+  const shown=applyFilter(all,FILTERS.cases,i=>i.opened);
+  $("#caseBar").innerHTML=filterBar("cases",all.length,shown.length);
+  const rows=withDividers(shown,CASE_ERAS,i=>i.era);
+  const el=$("#caseGrid");
+  const key=rows.map(r=>r.divider?("#"+r.divider):r.id).join(",");
+  if(el.dataset.key!==key){
+    el.dataset.key=key;
+    el.innerHTML=rows.map(r=> r.divider
+      ? '<div class="divider">'+r.divider+' <em>'+(r.sub||"")+'</em></div>'
+      : '<div class="crate" data-case="'+r.id+'">'+
+        '<div class="art">'+r.art+'</div><h3>'+r.n+'</h3>'+
+        '<div class="price">'+fmt(r.cost)+'</div>'+
+        '<div class="odds">Covert+ '+r.rare.toFixed(r.rare<1?2:1)+'%<br><span class="op"></span></div></div>').join("");
+  }
+  let x=0;
+  for(const r of rows){
+    const n=el.children[x++]; if(!n||r.divider)continue;
+    n.classList.toggle("locked",S.cred<r.cost);
+    const op=n.querySelector(".op"), t="opened "+r.opened+"x";
+    if(op&&op.textContent!==t)op.textContent=t;
+  }
+}
+function paintInv(){
+  const tot=S.inv.reduce((a,s)=>a+s.v,0), sb=skinBonus();
+  $("#invInfo").innerHTML=S.inv.length+" skins &nbsp;·&nbsp; worth <b style=\"color:var(--gold)\">"+fmt(tot)+
+    "</b> &nbsp;·&nbsp; passive bonus <b style=\"color:#8fa\">+"+(sb.cl*100).toFixed(1)+"%</b> to clicks and idle";
+  const SHOW=200;
+  const sig=S.inv.length+":"+S.sold;
+  if($("#invGrid").dataset.sig===sig) return;   // nothing changed, skip the rebuild
+  $("#invGrid").dataset.sig=sig;
+  const sorted=[...S.inv].map((s,i)=>({s,i})).sort((a,b)=>b.s.v-a.s.v).slice(0,SHOW);
+  let h="";
+  for(const {s,i} of sorted){
+    h+='<div class="skin" data-inv="'+i+'" style="--rc:'+RARITY[s.r].c+'">'+
+      (s.st?'<div class="st">ST™</div>':'')+
+      '<div class="g">'+s.g+'</div>'+
+      '<div class="n" style="color:'+RARITY[s.r].c+'">'+s.n+'</div>'+
+      '<div class="w">'+s.w+'</div><div class="v">'+fmt(s.v)+'</div>'+
+      '<div class="sell">SELL</div></div>';
+  }
+  if(!S.inv.length)h='<p style="color:var(--dim)">Empty. Open some cases.</p>';
+  else if(S.inv.length>SHOW)h+='<p style="color:var(--dim);grid-column:1/-1">…and '+(S.inv.length-SHOW)+' more, sorted by value (showing top '+SHOW+')</p>';
+  $("#invGrid").innerHTML=h;
+}
+function paintStats(){
+  const rows=[
+    ["Credits",fmt(S.cred)],["Lifetime earned",fmt(S.lifetime)],["Credits spent",fmt(S.spent)],
+    ["Skins sold for",fmt(S.sold)],["Total clicks",fmt(S.clicks)],["Critical hits",fmt(S.crits)],
+    ["Cases opened",fmt(S.opened)],["Rare specials unboxed",fmt(S.gotRare)],
+    ["Bots owned",fmt(botCount())],["Credits per second",fmt(cps())],["Credits per click",fmt(clickPower())],
+    ["Crit chance",(critChance()*100).toFixed(0)+"%"],["Crit payout",critMult().toFixed(1)+"x"],
+    ["Gems",fmt(S.gems)],["Trade-ups",fmt(S.prestiges)],
+    ["Achievement bonus","+"+(achBonus()*100).toFixed(0)+"%"],
+    ["Global multiplier","x"+fmt(globalMult())],
+    ["Play time",Math.floor(S.playTime/3600)+"h "+Math.floor(S.playTime/60)%60+"m"]
+  ];
+  $("#statTable").innerHTML=rows.map(r=>"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>").join("");
+  let got=0;
+  $("#achGrid").innerHTML=ACHS.map(a=>{
+    const on=!!S.ach[a.id]; if(on)got++;
+    return '<div class="ach '+(on?"got":"")+'"><div class="i">'+a.i+'</div><div><b>'+a.n+
+      '</b><span>'+a.d+(a.b?"  ·  +"+(a.b*100).toFixed(0)+"% all income":"")+'</span></div></div>';
+  }).join("");
+  $("#achCount").textContent=got+"/"+ACHS.length;
+  const ag=$("#saveAgo");
+  if(ag) ag.textContent=_lastSaved?("Last saved to disk "+Math.max(0,Math.round((Date.now()-_lastSaved)/1000))+"s ago"):"Not written to disk yet";
+  const g=prestigeGain();
+  $("#psGain").textContent=fmt(g);
+  $("#doPrestige").disabled=g<1;
+  $("#doPrestige").textContent=g<1?"Need 1B lifetime":"Trade up for "+fmt(g)+" gems";
+}
+/* Only the pane you are actually looking at gets rebuilt. Painting all six on
+   every purchase meant sorting the whole inventory and rebuilding hundreds of
+   tiles that nobody could see - which is what stalled rapid buying. */
+function activePane(){ const t=document.querySelector(".tab.on"); return t?t.dataset.p:"click"; }
+function paintAll(){
+  paintTop();
+  switch(activePane()){
+    case "upg":   paintUpg();   break;
+    case "bots":  paintBots();  break;
+    case "cases": paintCases(); break;
+    case "inv":   paintInv();   break;
+    case "stats": paintStats(); break;
+  }
+}
+
+/* ============ events ============ */
+document.addEventListener("click",e=>{
+  const fb=e.target.closest(".filters button");
+  if(fb){ FILTERS[fb.parentNode.dataset.pane]=fb.dataset.f; paintAll(); return; }
+  const c=e.target.closest(".card");
+  if(c&&!c.classList.contains("locked")){ buy(c.dataset.k,c.dataset.id); return; }
+  const cr=e.target.closest(".crate");
+  if(cr&&!cr.classList.contains("locked")){ openCase(CASES.find(x=>x.id===cr.dataset.case)); return; }
+  const sk=e.target.closest(".skin");
+  if(sk){ const i=+sk.dataset.inv; const s=S.inv[i]; if(s){ earn(s.v); S.sold+=s.v; S.inv.splice(i,1); invalidate(); toast("Sold "+s.n+" for "+fmt(s.v)); paintAll(); } return; }
+});
+$$(".tab").forEach(t=>t.onclick=()=>{
+  $$(".tab").forEach(x=>x.classList.remove("on")); t.classList.add("on");
+  $$(".pane").forEach(p=>p.classList.remove("on")); $("#p-"+t.dataset.p).classList.add("on");
+  paintAll();
+});
+$("#sellDupes").onclick=()=>{
+  const keep=S.inv.filter(s=>s.r>=3); const go=S.inv.filter(s=>s.r<3);
+  const v=go.reduce((a,s)=>a+s.v,0);
+  if(!go.length){toast("Nothing to sell");return;}
+  S.inv=keep; earn(v); S.sold+=v; invalidate(); toast("Sold "+go.length+" skins for "+fmt(v)); paintAll();
+};
+$("#sellAll").onclick=()=>{
+  if(!S.inv.length){toast("Inventory is empty");return;}
+  const v=S.inv.reduce((a,s)=>a+s.v,0), n=S.inv.length;
+  S.inv=[]; earn(v); S.sold+=v; invalidate(); toast("Sold "+n+" skins for "+fmt(v)); paintAll();
+};
+$("#doPrestige").onclick=()=>{
+  const g=prestigeGain(); if(g<1)return;
+  if(!confirm("Trade up everything for "+fmt(g)+" gems?\n\nYou lose credits, upgrades, bots and skins.\nGems, achievements and lifetime stats stay."))return;
+  const keep={gems:S.gems+g, prestiges:S.prestiges+1, ach:S.ach, lifetime:S.lifetime,
+              clicks:S.clicks, opened:S.opened, gotRare:S.gotRare, playTime:S.playTime,
+              caseStats:S.caseStats, crits:S.crits, sold:S.sold, spent:S.spent};
+  S=Object.assign(fresh(),keep);
+  invalidate(); toast("Traded up! +"+fmt(g)+" gems"); checkAch(); paintAll(); save();
+};
+
+/* ============ achievements / toast ============ */
+function checkAch(){
+  let botTypes=0; for(const b of BOTS) if((S.bots[b.id]||0)>0) botTypes++;
+  let caseTypes=0; for(const k in S.caseStats) if(S.caseStats[k]>0) caseTypes++;
+  const snap={clicks:S.clicks,opened:S.opened,gotRare:S.gotRare,lifetime:S.lifetime,
+              botCount:botCount(),invLen:S.inv.length,prestiges:S.prestiges,
+              gems:S.gems,botTypes:botTypes,caseTypes:caseTypes};
+  for(const a of ACHS) if(!S.ach[a.id]&&a.t(snap)){ S.ach[a.id]=1; invalidate(); toast("🏆 "+a.n+" — "+a.d); }
+}
+function toast(msg){
+  const d=document.createElement("div"); d.className="toast"; d.textContent=msg;
+  $("#toasts").appendChild(d);
+  setTimeout(()=>{d.style.transition="opacity .3s";d.style.opacity="0";setTimeout(()=>d.remove(),320);},3600);
+}
+
+/* ============ save / load ============ */
+/* Tell the app we're still here. It shuts down when these stop arriving,
+   so this doubles as the "window closed" signal. */
+function heartbeat(){ fetch("/alive",{cache:"no-store"}).catch(()=>{}); }
+setInterval(heartbeat,3000); heartbeat();
+
+let _saving=false, _saveQueued=false;
+function save(){
+  S.saveTime=Date.now();
+  const blob=JSON.stringify(S);
+  try{ localStorage.setItem("caseclicker",blob); }catch(e){}   // browser-side mirror
+  if(_saving){ _saveQueued=true; return; }                      // never pile up requests
+  _saving=true;
+  const done=()=>{ _saving=false; if(_saveQueued){ _saveQueued=false; save(); } };
+  // A hung request must not wedge saving forever.
+  const guard=setTimeout(done,8000);
+  fetch("/save",{method:"POST",body:blob})
+    .then(r=>{ if(r.ok){ _lastSaved=Date.now(); _saveFails=0; } else _saveFails++; })
+    .catch(()=>{ _saveFails++; })
+    .finally(()=>{ clearTimeout(guard); done(); warnIfSavesFailing(); });
+}
+let _lastSaved=0, _saveFails=0, _warned=false;
+/* If the disk save has failed repeatedly the player deserves to know BEFORE
+   they close the window and lose the run. */
+function warnIfSavesFailing(){
+  if(_saveFails>=3 && !_warned){
+    _warned=true;
+    toast("⚠ Progress can't be written to disk right now. Use Stats → Export to file to keep this run.");
+  }
+  if(_saveFails===0) _warned=false;
+}
+/* A save the browser will still deliver while the window is closing. */
+function saveOnExit(){
+  S.saveTime=Date.now();
+  const blob=JSON.stringify(S);
+  try{ localStorage.setItem("caseclicker",blob); }catch(e){}
+  try{ navigator.sendBeacon("/save", new Blob([blob],{type:"application/json"})); }
+  catch(e){ try{ fetch("/save",{method:"POST",body:blob,keepalive:true}); }catch(_){} }
+}
+async function load(){
+  let fromServer=null, fromLocal=null;
+  try{ const r=await fetch("/load"); if(r.ok){ const t=await r.text(); if(t&&t.length>10) fromServer=t; } }catch(e){}
+  try{ fromLocal=localStorage.getItem("caseclicker"); }catch(e){}
+
+  // Prefer whichever copy was written most recently. If a previous run lost its
+  // server connection, the browser-side mirror can legitimately be the newer one.
+  const stamp=t=>{ try{ const d=JSON.parse(t); return d&&typeof d.saveTime==="number"?d.saveTime:0; }catch(e){ return -1; } };
+  let raw=null;
+  if(fromServer&&fromLocal) raw = stamp(fromLocal)>stamp(fromServer) ? fromLocal : fromServer;
+  else raw = fromServer||fromLocal;
+  if(!raw)return false;
+
+  try{
+    const d=JSON.parse(raw);
+    S=Object.assign(fresh(),d);
+    S.up=S.up||{}; S.mult=S.mult||{}; S.bots=S.bots||{}; S.botUp=S.botUp||{};
+    S.inv=S.inv||[]; S.ach=S.ach||{}; S.caseStats=S.caseStats||{};
+    invalidate();
+    const away=Math.min((Date.now()-(S.saveTime||Date.now()))/1000, 8*3600);
+    if(away>60){
+      const gain=cps()*away*0.45;
+      if(gain>0){ earn(gain); setTimeout(()=>toast("Welcome back — bots earned "+fmt(gain)+" while you were away ("+Math.floor(away/60)+" min)"),700); }
+    }
+    // Write straight back so both copies agree from here on.
+    save();
+    return true;
+  }catch(e){ return false; }
+}
+$("#saveNow").onclick=()=>{ save(); toast("Saved to disk"); };
+$("#exportSave").onclick=()=>{
+  save();
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="caseclicker-save-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+  toast("Save exported to your Downloads folder");
+};
+$("#importSave").onclick=()=>$("#importFile").click();
+$("#importFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(typeof d.cred!=="number") throw new Error("not a Case Clicker save");
+      if(!confirm("Load this save? Your current progress will be replaced."))return;
+      S=Object.assign(fresh(),d);
+      S.up=S.up||{};S.mult=S.mult||{};S.bots=S.bots||{};S.botUp=S.botUp||{};
+      S.inv=S.inv||[];S.ach=S.ach||{};S.caseStats=S.caseStats||{};
+      invalidate(); paintAll(); save(); toast("Save loaded");
+    }catch(err){ toast("That file isn't a valid save"); }
+  };
+  rd.readAsText(f); e.target.value="";
+};
+$("#wipe").onclick=()=>{
+  if(!confirm("Delete your save permanently?"))return;
+  try{localStorage.removeItem("caseclicker");}catch(e){}
+  fetch("/save",{method:"POST",body:"{}"}).catch(()=>{});
+  S=fresh(); invalidate(); paintAll(); toast("Save deleted");
+};
+window.addEventListener("beforeunload",saveOnExit);
+window.addEventListener("pagehide",saveOnExit);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden")saveOnExit(); });
+
+/* ============ updates ============ */
+let _updRel=null;
+async function checkUpdate(){
+  try{
+    const r=await fetch("/update/status");
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.available&&d.release){
+      _updRel=d.release;
+      $("#updTitle").textContent="Version "+d.release.version+" is available";
+      $("#updNotes").textContent=d.release.notes||("You're on "+d.current+".");
+      $("#updBar").classList.add("on");
+    }
+  }catch(e){ /* offline - the game does not care */ }
+}
+$("#updLater").onclick=()=>$("#updBar").classList.remove("on");
+$("#updSkip").onclick=()=>{ fetch("/update/skip").catch(()=>{}); $("#updBar").classList.remove("on"); toast("Skipped "+(_updRel?_updRel.version:"this version")); };
+$("#updNow").onclick=async()=>{
+  const btn=$("#updNow");
+  btn.disabled=true; $("#updSkip").disabled=true;
+  btn.textContent="Downloading…";
+  $("#updNotes").textContent="Saving your progress, then installing. The game will reopen by itself.";
+  save();
+  try{
+    const r=await fetch("/update/apply",{method:"POST"});
+    const d=await r.json();
+    if(d.error){
+      btn.disabled=false; $("#updSkip").disabled=false; btn.textContent="Try again";
+      $("#updNotes").textContent="Update failed: "+d.error;
+      return;
+    }
+    btn.textContent="Installing…";
+    $("#updNotes").textContent="Closing now — Case Clicker will reopen in a few seconds.";
+  }catch(e){
+    btn.disabled=false; btn.textContent="Try again";
+    $("#updNotes").textContent="Could not reach the update server.";
+  }
+};
+
+/* ============ loop ============ */
+let last=performance.now(), acc=0, saveAcc=0;
+function loop(now){
+  const dt=Math.min((now-last)/1000,1); last=now;
+  S.playTime+=dt; acc+=dt; saveAcc+=dt;
+  earn(cps()*dt);
+  if(acc>=0.12){ acc=0; measureWrap(); paintTop(); if(!$("#p-click").classList.contains("on"))paintVisible(); }
+  if(saveAcc>=8){ saveAcc=0; checkAch(); save(); }
+  requestAnimationFrame(loop);
+}
+function paintVisible(){ paintAll(); }
+(async()=>{
+  fetch("/info").then(r=>r.json()).then(d=>{
+    if(d&&d.savePath){ const el=$("#savePath"); if(el)el.textContent=d.savePath; }
+  }).catch(()=>{});
+  measureWrap();
+  await load();
+  checkAch(); paintAll();
+  requestAnimationFrame(loop);
+  setTimeout(checkUpdate,2500);                 // let the game settle first
+  setInterval(checkUpdate,30*60*1000);          // and re-check every 30 min
+})();
+</script>
+</body>
+</html>
